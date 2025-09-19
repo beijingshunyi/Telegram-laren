@@ -6,31 +6,18 @@
     <title>Telegram群组用户转移工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#2563eb',
-                        secondary: '#64748b',
-                        success: '#10b981',
-                        danger: '#ef4444',
-                    },
-                }
-            }
-        }
-    </script>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-4xl">
         <header class="text-center mb-10">
             <h1 class="text-2xl md:text-3xl font-bold mb-2">
-                <i class="fa fa-telegram text-primary mr-2"></i>Telegram万花楼群组用户转移工具
+                <i class="fa fa-telegram text-primary mr-2"></i>Telegram群组用户转移工具
             </h1>
             <p class="text-gray-600">轻松将成员从一个群组转移到另一个群组</p>
         </header>
 
         <main class="bg-white rounded-xl shadow p-6 md:p-8 mb-8">
+            <!-- 群组设置 -->
             <div class="mb-8">
                 <h2 class="text-xl font-semibold mb-4">群组设置</h2>
                 <div class="grid md:grid-cols-2 gap-6">
@@ -55,6 +42,7 @@
                 </div>
             </div>
 
+            <!-- 操作按钮 -->
             <div class="mb-8 text-center">
                 <button 
                     id="startTransfer" 
@@ -64,6 +52,7 @@
                 </button>
             </div>
 
+            <!-- 转移状态 -->
             <div class="mb-8">
                 <h2 class="text-xl font-semibold mb-4">转移状态</h2>
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -98,6 +87,7 @@
                 </div>
             </div>
 
+            <!-- 操作日志 -->
             <div>
                 <h2 class="text-xl font-semibold mb-4">操作日志</h2>
                 <div id="logContainer" class="bg-gray-900 text-gray-200 rounded-lg p-4 h-60 overflow-y-auto text-sm font-mono">
@@ -108,8 +98,9 @@
     </div>
 
     <script>
-        // 替换为您的新Worker地址（无敏感词名称）
-        const API_BASE_URL = 'https://proxy-7391.your-account.workers.dev';
+        // ################## 关键：替换为您的实际Worker地址 ##################
+        const API_BASE_URL = 'https://<worker-name>.<your-account-subdomain>.workers.dev
+'; 
         let statusPollInterval = null;
 
         // DOM元素
@@ -154,37 +145,43 @@
             }
         }
 
-        // 获取当前状态
+        // 获取当前状态（带预检请求处理）
         async function getStatus() {
             try {
-                // 使用简单GET请求，无额外头信息
+                // 先发送OPTIONS预检请求（确保CORS通过）
+                await fetch(`${API_BASE_URL}/status`, { method: 'OPTIONS' });
+                
+                // 再发送实际GET请求
                 const response = await fetch(`${API_BASE_URL}/status`, {
                     method: 'GET',
                     mode: 'cors',
-                    headers: { 'Content-Type': 'text/plain' } // 避免JSON类型触发拦截
+                    headers: { 'Content-Type': 'application/json' }
                 });
                 
-                const responseText = await response.text();
-                
                 if (!response.ok) {
-                    addLog(`服务器错误 (${response.status}): ${responseText}`);
+                    addLog(`服务器错误 (${response.status}): ${await response.text()}`);
                     return;
                 }
                 
-                // 尝试解析JSON，失败则视为文本响应
                 try {
-                    const status = JSON.parse(responseText);
+                    const status = await response.json();
                     updateStatus(status);
                     return status;
                 } catch (e) {
-                    addLog(`服务器响应: ${responseText}`);
+                    addLog(`服务器返回非JSON数据: ${await response.text()}`);
                 }
             } catch (error) {
-                addLog(`错误：无法获取状态 - ${error.message}`);
+                addLog(`获取状态失败: ${error.message}`);
+                // 详细错误分析
+                if (error.message.includes('CORS')) {
+                    addLog('CORS错误：请检查Worker的ALLOWED_ORIGIN配置');
+                } else if (error.message.includes('404')) {
+                    addLog('404错误：Worker地址不正确，请检查URL');
+                }
             }
         }
 
-        // 开始转移 - 使用FormData而非JSON
+        // 开始转移（带预检请求处理）
         async function startTransfer() {
             const sourceGroup = sourceGroupInput.value.trim();
             const targetGroup = targetGroupInput.value.trim();
@@ -195,7 +192,10 @@
             }
 
             try {
-                // 使用FormData格式而非JSON，避免被识别为敏感内容
+                // 先发送OPTIONS预检请求
+                await fetch(`${API_BASE_URL}/transfer`, { method: 'OPTIONS' });
+                
+                // 再发送实际POST请求（FormData格式）
                 const formData = new FormData();
                 formData.append('source', sourceGroup);
                 formData.append('target', targetGroup);
@@ -203,20 +203,23 @@
                 const response = await fetch(`${API_BASE_URL}/transfer`, {
                     method: 'POST',
                     mode: 'cors',
-                    body: formData // 不设置Content-Type，让浏览器自动处理
+                    body: formData
                 });
 
-                const responseText = await response.text();
-                
                 if (!response.ok) {
-                    addLog(`转移请求失败 (${response.status}): ${responseText}`);
+                    addLog(`转移请求失败 (${response.status}): ${await response.text()}`);
                     return;
                 }
 
                 addLog('开始转移用户...');
                 startStatusPolling();
             } catch (error) {
-                addLog(`错误：开始转移失败 - ${error.message}`);
+                addLog(`开始转移失败: ${error.message}`);
+                if (error.message.includes('CORS')) {
+                    addLog('CORS错误：请检查Worker的CORS配置');
+                } else if (error.message.includes('404')) {
+                    addLog('404错误：Worker地址不正确');
+                }
             }
         }
 
@@ -230,9 +233,13 @@
         // 事件监听
         startBtn.addEventListener('click', startTransfer);
 
-        // 页面加载时获取一次状态
+        // 页面加载时执行
         window.addEventListener('load', () => {
             addLog('页面已加载，准备就绪');
+            // 检查Worker地址是否正确配置
+            if (API_BASE_URL.includes('your-account-subdomain')) {
+                addLog('警告：请替换API_BASE_URL为您的实际Worker地址');
+            }
             getStatus();
         });
     </script>
