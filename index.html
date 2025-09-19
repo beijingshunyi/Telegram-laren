@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>【万花楼】Telegram群组用户转移工具</title>
+    <title>Telegram群组用户转移工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script>
@@ -142,13 +142,14 @@
         </main>
 
         <footer class="text-center text-gray-500 text-sm">
-            <p>© 2025 【万花楼】Telegram群组用户转移工具 | 注意：请遵守Telegram使用条款</p>
+            <p>© 2025 Telegram群组工具 | 注意：请遵守Telegram使用条款</p>
         </footer>
     </div>
 
     <script>
-        // 后端API地址（替换为您的EC2公网IP）
-        const API_BASE_URL = 'http://3.26.45.31:8000';
+        // 关键修改：使用Cloudflare Worker的HTTPS地址
+        // 请将下面的地址替换为您实际的Cloudflare Worker地址
+        const API_BASE_URL = 'https://telegram-laren.bingkuijing.workers.dev/';
         let statusPollInterval = null;
 
         // DOM元素
@@ -265,7 +266,6 @@
         // 事件监听
         startBtn.addEventListener('click', startTransfer);
         stopBtn.addEventListener('click', () => {
-            // 实际项目中可能需要实现停止功能
             addLog('提示：当前版本不支持中途停止，请等待完成');
         });
 
