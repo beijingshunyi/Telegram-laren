@@ -3,2825 +3,329 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram 群组管理</title>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <title>Telegram 群组用户转移控制台</title>
     <style>
-        /* 基础样式 */
+        /* iOS风格样式 */
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
-        
         body {
-            background-color: #F5F5F7;
-            color: #1C1C1E;
-            min-height: 100vh;
-            padding-bottom: 60px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f2f2f7;
+            color: #000;
+            line-height: 1.47059;
         }
-        
-        /* iOS风格组件 */
         .container {
-            max-width: 1000px;
+            max-width: 600px;
             margin: 0 auto;
-            padding: 0 16px;
+            padding: 20px;
         }
-        
-        /* 卡片样式 */
-        .card {
-            background-color: white;
-            border-radius: 16px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            transition: all 0.2s;
-            margin-bottom: 16px;
-        }
-        
-        /* 按钮样式 */
-        .btn {
-            border-radius: 25px;
-            font-weight: 500;
-            transition: all 0.2s;
-            outline: none;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .btn-primary {
-            background-color: #007AFF;
-            color: white;
-            box-shadow: 0 2px 4px rgba(0, 122, 255, 0.3);
-        }
-        
-        .btn-primary:hover {
-            background-color: #0066CC;
-        }
-        
-        .btn-primary:active {
-            transform: scale(0.95);
-        }
-        
-        .btn-secondary {
-            background-color: #F5F5F7;
-            color: #1C1C1E;
-        }
-        
-        .btn-secondary:hover {
-            background-color: #E5E5EA;
-        }
-        
-        .btn-secondary:active {
-            transform: scale(0.95);
-        }
-        
-        .btn-danger {
-            background-color: #FF3B30;
-            color: white;
-        }
-        
-        .btn-danger:hover {
-            background-color: #CC2D25;
-        }
-        
-        .btn-danger:active {
-            transform: scale(0.95);
-        }
-        
-        /* 输入框样式 */
-        .input {
-            width: 100%;
-            border: 1px solid #E5E5EA;
-            border-radius: 8px;
-            padding: 12px 16px;
-            font-size: 16px;
-            transition: all 0.2s;
-        }
-        
-        .input:focus {
-            outline: none;
-            border-color: #007AFF;
-            box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
-        }
-        
-        /* 标签页样式 */
-        .tabs {
-            display: flex;
-            background-color: white;
-            border-radius: 16px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            margin-bottom: 16px;
-            overflow: hidden;
-        }
-        
-        .tab {
-            flex: 1;
+        .header {
             text-align: center;
-            padding: 16px;
-            color: #636366;
-            transition: all 0.2s;
-            position: relative;
-            cursor: pointer;
-            font-size: 14px;
+            margin-bottom: 20px;
         }
-        
-        .tab-active {
-            color: #007AFF;
-            font-weight: 500;
-        }
-        
-        .tab-active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background-color: #007AFF;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        /* 徽章样式 */
-        .badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        /* 提示框样式 */
-        .toast {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 20px;
-            border-radius: 25px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            color: white;
-            z-index: 50;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        .toast.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        
-        .toast i {
-            margin-right: 8px;
-        }
-        
-        /* 确认弹窗 */
-        .modal {
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-        }
-        
-        .modal.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        
-        .modal-content {
-            background-color: white;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 400px;
-            padding: 24px;
-            transform: translateY(20px);
-            transition: transform 0.3s;
-        }
-        
-        .modal.show .modal-content {
-            transform: translateY(0);
-        }
-        
-        .modal-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 16px;
-        }
-        
-        .modal-message {
-            color: #636366;
-            margin-bottom: 24px;
-        }
-        
-        .modal-buttons {
-            display: flex;
-            gap: 12px;
-        }
-        
-        .modal-buttons .btn {
-            flex: 1;
-        }
-        
-        /* 顶部导航 */
-        header {
-            background-color: white;
-            padding: 16px 0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 40;
-        }
-        
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo {
-            font-size: 18px;
-            font-weight: 600;
-        }
-        
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            font-size: 14px;
-            color: #636366;
-        }
-        
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        
-        /* 主内容区 */
-        main {
-            padding: 16px 0;
-        }
-        
-        /* 统计卡片 */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-        
-        @media (min-width: 768px) {
-            .stats-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-        
-        .stat-card {
-            padding: 16px;
-            text-align: center;
-        }
-        
-        .stat-label {
-            font-size: 14px;
-            color: #636366;
-            margin-bottom: 8px;
-        }
-        
-        .stat-value {
+        .header h1 {
             font-size: 24px;
             font-weight: 600;
         }
-        
-        /* 图表容器 */
-        .chart-container {
-            padding: 20px;
-            height: 300px;
+        .card {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        
-        /* 列表样式 */
+        .card h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d1d6;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007aff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #005ecb;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        .button-group button {
+            flex: 1;
+        }
         .list-item {
-            padding: 12px 16px;
-            border-bottom: 1px solid #E5E5EA;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #e5e5ea;
         }
-        
         .list-item:last-child {
             border-bottom: none;
         }
-        
-        .list-item-content {
-            flex: 1;
-        }
-        
-        .list-item-title {
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-        
-        .list-item-subtitle {
+        .list-item button {
+            background-color: #ff3b30;
+            padding: 6px 12px;
             font-size: 14px;
-            color: #636366;
+            width: auto;
         }
-        
-        /* 卡片标题 */
-        .card-title {
-            font-size: 18px;
-            font-weight: 600;
-            padding: 20px 20px 12px;
-        }
-        
-        .card-content {
-            padding: 0 20px 20px;
-        }
-        
-        /* 底部导航 */
-        footer {
-            background-color: white;
-            padding: 12px 0;
-            border-top: 1px solid #E5E5EA;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 30;
-        }
-        
-        .footer-content {
-            text-align: center;
-            font-size: 12px;
-            color: #636366;
-        }
-        
-        /* 表单样式 */
-        .form-group {
-            margin-bottom: 16px;
-        }
-        
-        .form-label {
-            display: block;
-            font-size: 14px;
-            color: #636366;
-            margin-bottom: 8px;
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-        
-        @media (min-width: 768px) {
-            .form-row {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        /* 进度条 */
-        .progress-container {
-            width: 100%;
-            height: 6px;
-            background-color: #E5E5EA;
-            border-radius: 3px;
-            margin: 8px 0;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            background-color: #007AFF;
-            border-radius: 3px;
-            transition: width 0.3s;
-        }
-        
-        /* 表格样式 */
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .table th, .table td {
-            padding: 12px 16px;
-            text-align: left;
-            font-size: 14px;
-        }
-        
-        .table th {
-            color: #636366;
-            font-weight: 500;
-            border-bottom: 1px solid #E5E5EA;
-        }
-        
-        .table td {
-            border-bottom: 1px solid #F5F5F7;
-        }
-        
-        .table tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .table tr:nth-child(even) {
-            background-color: #F9F9F9;
-        }
-        
-        /* 日志容器 */
-        .logs-container {
+        .logs {
             max-height: 400px;
             overflow-y: auto;
         }
-        
-        /* 搜索框 */
-        .search-container {
-            position: relative;
-            margin-bottom: 16px;
-        }
-        
-        .search-input {
-            padding-left: 40px;
-        }
-        
-        .search-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #636366;
-        }
-        
-        /* 过滤按钮组 */
-        .filter-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        
-        .filter-btn {
-            padding: 6px 12px;
-            font-size: 14px;
-        }
-        
-        .filter-btn.active {
-            background-color: #007AFF;
-            color: white;
-        }
-        
-        /* 分页控件 */
-        .pagination {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 16px;
-        }
-        
-        .pagination-info {
-            font-size: 14px;
-            color: #636366;
-        }
-        
-        .pagination-buttons {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .pagination-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        /* 最近日志 */
-        .recent-logs {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
         .log-item {
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-        
-        .log-item-success {
-            background-color: rgba(52, 199, 89, 0.1);
-        }
-        
-        .log-item-failed {
-            background-color: rgba(255, 59, 48, 0.1);
-        }
-        
-        .log-item-skipped {
-            background-color: rgba(255, 204, 0, 0.1);
-        }
-        
-        .log-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        
-        .log-user {
-            font-weight: 500;
-        }
-        
-        .log-status {
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        .log-status-success {
-            color: #34C759;
-        }
-        
-        .log-status-failed {
-            color: #FF3B30;
-        }
-        
-        .log-status-skipped {
-            color: #FFCC00;
-        }
-        
-        .log-details {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e5e5ea;
             font-size: 14px;
-            color: #636366;
-            margin-bottom: 4px;
         }
-        
-        .log-time {
-            font-size: 12px;
-            color: #8E8E93;
+        .log-item.success {
+            color: #34c759;
         }
-        
-        .log-reason {
-            font-size: 12px;
-            color: #FF3B30;
-            margin-top: 4px;
+        .log-item.failed {
+            color: #ff3b30;
         }
-        
-        /* 配置面板 */
-        .config-panel {
-            margin-bottom: 24px;
+        .log-item.skipped {
+            color: #ff9500;
         }
-        
-        .config-panel-title {
-            font-size: 16px;
-            color: #636366;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-        }
-        
-        .config-panel-title i {
-            margin-right: 8px;
-        }
-        
-        .group-badges {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        
-        .group-badge {
-            background-color: rgba(0, 122, 255, 0.1);
-            color: #007AFF;
-        }
-        
-        .target-badge {
-            background-color: rgba(52, 199, 89, 0.1);
-            color: #34C759;
-        }
-        
-        /* 开关按钮 */
-        .switch {
-            position: relative;
+        .status-indicator {
             display: inline-block;
-            width: 51px;
-            height: 30px;
-        }
-        
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #E5E5EA;
-            transition: .4s;
-            border-radius: 30px;
-        }
-        
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 22px;
-            width: 22px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-        }
-        
-        input:checked + .slider {
-            background-color: #007AFF;
-        }
-        
-        input:checked + .slider:before {
-            transform: translateX(21px);
-        }
-        
-        /* 开关标签容器 */
-        .switch-label {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        
-        .switch-text {
-            flex: 1;
-        }
-        
-        /* API配置面板 */
-        .api-config-panel {
-            background-color: rgba(255, 204, 0, 0.1);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 24px;
-        }
-        
-        .api-config-title {
-            display: flex;
-            align-items: center;
-            font-size: 16px;
-            font-weight: 500;
-            margin-bottom: 12px;
-            color: #FF9500;
-        }
-        
-        .api-config-title i {
             margin-right: 8px;
+        }
+        .status-running {
+            background-color: #34c759;
+        }
+        .status-stopped {
+            background-color: #ff3b30;
         }
     </style>
 </head>
 <body>
-    <!-- 顶部导航 -->
-    <header>
-        <div class="container header-content">
-            <h1 class="logo">Telegram 群组管理</h1>
-            <div class="flex items-center gap-3">
-                <span class="status-indicator">
-                    <span id="status-dot" class="status-dot" style="background-color: #E5E5EA;"></span>
-                    <span id="status-text">未连接</span>
-                </span>
-                <button id="refresh-btn" class="btn btn-secondary p-2">
-                    <i class="fa fa-refresh"></i>
-                </button>
-            </div>
+    <div class="container">
+        <div class="header">
+            <h1>Telegram 群组用户转移控制台</h1>
         </div>
-    </header>
 
-    <!-- 主内容区 -->
-    <main class="container">
-        <!-- API配置面板 -->
-        <div class="api-config-panel">
-            <div class="api-config-title">
-                <i class="fa fa-cog"></i> API 配置
+        <!-- 群组配置 -->
+        <div class="card">
+            <h2>群组配置</h2>
+            <div class="form-group">
+                <label for="sourceChat">源群组ID（多个用逗号分隔）</label>
+                <input type="text" id="sourceChat" placeholder="例如：-1001234567890,-1000987654321">
             </div>
             <div class="form-group">
-                <label class="form-label">API 基础地址</label>
-                <input type="text" id="api-base-url" class="input" 
-                       value="https://telegram-laren.bingkuijing.workers.dev"
-                       placeholder="输入API基础地址">
+                <label for="targetChat">目标群组ID</label>
+                <input type="text" id="targetChat" placeholder="例如：-1001234567890">
             </div>
-            <button id="save-api-config" class="btn btn-primary">
-                <i class="fa fa-save mr-1"></i> 保存配置
-            </button>
+            <button onclick="saveConfig()">保存配置</button>
         </div>
 
-        <!-- 标签页导航 -->
-        <div class="tabs">
-            <div class="tab tab-active" data-tab="dashboard">
-                <i class="fa fa-tachometer mr-1"></i> 仪表盘
+        <!-- 当前配置 -->
+        <div class="card">
+            <h2>当前配置</h2>
+            <div id="currentConfig">
+                <p>源群组：<span id="currentSource">未设置</span></p>
+                <p>目标群组：<span id="currentTarget">未设置</span></p>
+                <p>运行状态：<span id="runningStatus"><span class="status-indicator status-stopped"></span>已停止</span></p>
             </div>
-            <div class="tab" data-tab="groups">
-                <i class="fa fa-users mr-1"></i> 群组配置
-            </div>
-            <div class="tab" data-tab="transfer">
-                <i class="fa fa-exchange mr-1"></i> 转移管理
-            </div>
-            <div class="tab" data-tab="logs">
-                <i class="fa fa-history mr-1"></i> 操作日志
+            <div class="button-group">
+                <button onclick="startTransfer()">开始转移</button>
+                <button onclick="stopTransfer()">停止转移</button>
             </div>
         </div>
 
-        <!-- 仪表盘标签页 -->
-        <div id="dashboard-tab" class="tab-content active">
-            <!-- 统计卡片 -->
-            <div class="stats-grid">
-                <div class="card stat-card">
-                    <div class="stat-label">总转移用户</div>
-                    <div id="total-transferred" class="stat-value">0</div>
-                </div>
-                <div class="card stat-card">
-                    <div class="stat-label">活跃源群组</div>
-                    <div id="active-sources" class="stat-value">0</div>
-                </div>
-                <div class="card stat-card">
-                    <div class="stat-label">活跃目标群组</div>
-                    <div id="active-targets" class="stat-value">0</div>
-                </div>
-                <div class="card stat-card">
-                    <div class="stat-label">转移成功率</div>
-                    <div id="success-rate" class="stat-value">0%</div>
-                </div>
-            </div>
-
-            <!-- 转移趋势图表 -->
-            <div class="card">
-                <h2 class="card-title">转移趋势</h2>
-                <div class="card-content">
-                    <div class="chart-container">
-                        <canvas id="transfer-chart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 当前配置 -->
-            <div class="card">
-                <h2 class="card-title">当前群组配置</h2>
-                <div class="card-content">
-                    <div class="config-panel">
-                        <h3 class="config-panel-title">
-                            <i class="fa fa-arrow-circle-right text-primary"></i> 源群组
-                        </h3>
-                        <div id="source-groups-list" class="group-badges">
-                            <div class="badge group-badge">加载中...</div>
-                        </div>
-                    </div>
-                    
-                    <div class="config-panel">
-                        <h3 class="config-panel-title">
-                            <i class="fa fa-arrow-circle-left text-secondary"></i> 目标群组
-                        </h3>
-                        <div id="target-groups-list" class="group-badges">
-                            <div class="badge target-badge">加载中...</div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex gap-3">
-                        <button id="start-transfer-btn" class="btn btn-primary flex-1">
-                            <i class="fa fa-play mr-1"></i> 开始转移
-                        </button>
-                        <button id="stop-transfer-btn" class="btn btn-danger flex-1">
-                            <i class="fa fa-stop mr-1"></i> 停止转移
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 最近操作 -->
-            <div class="card">
-                <div class="card-title flex justify-between items-center">
-                    <h2>最近转移记录</h2>
-                    <button id="view-all-logs-btn" class="text-primary text-sm flex items-center">
-                        查看全部 <i class="fa fa-angle-right ml-1"></i>
-                    </button>
-                </div>
-                <div id="recent-logs" class="card-content recent-logs">
-                    <div class="text-center text-gray-600 py-6">加载最近记录...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 群组配置标签页 -->
-        <div id="groups-tab" class="tab-content">
-            <!-- 添加源群组 -->
-            <div class="card">
-                <h2 class="card-title">添加源群组</h2>
-                <div class="card-content">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">群组ID</label>
-                            <input type="text" id="source-group-id" class="input" placeholder="例如: -1001234567890">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">群组名称</label>
-                            <input type="text" id="source-group-name" class="input" placeholder="输入群组名称">
-                        </div>
-                    </div>
-                    <div>
-                        <button id="add-source-btn" class="btn btn-primary">
-                            <i class="fa fa-plus mr-1"></i> 添加源群组
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 添加目标群组 -->
-            <div class="card">
-                <h2 class="card-title">添加/修改目标群组</h2>
-                <div class="card-content">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">目标群组ID <span style="color: #FF3B30">*</span></label>
-                            <input type="text" id="target-group-id" class="input" placeholder="例如: -1001234567890" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">目标群组名称 <span style="color: #FF3B30">*</span></label>
-                            <input type="text" id="target-group-name" class="input" placeholder="输入群组名称" required>
-                        </div>
-                    </div>
-                    <div>
-                        <button id="save-target-btn" class="btn btn-primary">
-                            <i class="fa fa-save mr-1"></i> 保存目标群组
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 已配置群组列表 -->
-            <div class="card">
-                <div class="card-title flex justify-between items-center">
-                    <h2>已配置群组</h2>
-                    <button id="clear-all-groups-btn" class="btn btn-danger">
-                        <i class="fa fa-trash mr-1"></i> 清空所有
-                    </button>
-                </div>
-                <div class="card-content">
-                    <div class="config-panel">
-                        <h3 class="config-panel-title">源群组列表</h3>
-                        <div id="configured-sources" class="space-y-3">
-                            <div class="text-center text-gray-600 py-6">加载源群组...</div>
-                        </div>
-                    </div>
-                    
-                    <div class="config-panel">
-                        <h3 class="config-panel-title">目标群组列表</h3>
-                        <div id="configured-targets" class="space-y-3">
-                            <div class="text-center text-gray-600 py-6">加载目标群组...</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 转移管理标签页 -->
-        <div id="transfer-tab" class="tab-content">
-            <!-- 转移设置 -->
-            <div class="card">
-                <h2 class="card-title">转移设置</h2>
-                <div class="card-content">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">每次转移用户数</label>
-                            <select id="batch-size" class="input">
-                                <option value="3">3人/批</option>
-                                <option value="5" selected>5人/批</option>
-                                <option value="10">10人/批</option>
-                                <option value="20">20人/批</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">批处理间隔（秒）</label>
-                            <select id="batch-interval" class="input">
-                                <option value="300">300秒 (5分钟)</option>
-                                <option value="600" selected>600秒 (10分钟)</option>
-                                <option value="900">900秒 (15分钟)</option>
-                                <option value="1800">1800秒 (30分钟)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">历史消息提取数量</label>
-                            <select id="message-limit" class="input">
-                                <option value="300">300条</option>
-                                <option value="500" selected>500条</option>
-                                <option value="1000">1000条</option>
-                                <option value="2000">2000条</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="flex gap-3">
-                        <button id="save-settings-btn" class="btn btn-primary">
-                            <i class="fa fa-save mr-1"></i> 保存设置
-                        </button>
-                        <button id="reset-settings-btn" class="btn btn-secondary">
-                            <i class="fa fa-refresh mr-1"></i> 恢复默认
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 转移状态 -->
-            <div class="card">
-                <h2 class="card-title">当前转移状态</h2>
-                <div class="card-content space-y-4">
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-600">转移状态</span>
-                        <span id="transfer-status" class="badge" style="background-color: #F5F5F7; color: #636366;">未运行</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-600">当前处理群组</span>
-                        <span id="current-group" class="text-gray-800">-</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-600">已处理用户</span>
-                        <span id="processed-users" class="text-gray-800">0/0</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-600">预计完成时间</span>
-                        <span id="estimated-time" class="text-gray-800">-</span>
-                    </div>
-                    
-                    <div>
-                        <h3 class="form-label">转移进度</h3>
-                        <div class="progress-container">
-                            <div id="transfer-progress" class="progress-bar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 过滤设置 -->
-            <div class="card">
-                <h2 class="card-title">过滤设置</h2>
-                <div class="card-content">
-                    <div class="switch-label">
-                        <span class="switch-text">过滤机器人账号</span>
-                        <label class="switch">
-                            <input type="checkbox" id="filter-bots" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="switch-label">
-                        <span class="switch-text">过滤管理员/群主</span>
-                        <label class="switch">
-                            <input type="checkbox" id="filter-admins" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="switch-label">
-                        <span class="switch-text">过滤目标群已存在用户</span>
-                        <label class="switch">
-                            <input type="checkbox" id="filter-existing" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">最低发言次数（过滤不活跃用户）</label>
-                        <input type="number" id="min-messages" class="input" style="width: 100px;" value="1" min="1" max="100">
-                    </div>
-                    
-                    <div>
-                        <button id="apply-filters-btn" class="btn btn-primary">
-                            <i class="fa fa-filter mr-1"></i> 应用过滤规则
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 日志标签页 -->
-        <div id="logs-tab" class="tab-content">
-            <div class="card">
-                <div class="card-title">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                        <h2>操作日志</h2>
-                        <div class="flex gap-3">
-                            <div class="search-container flex-1 md:flex-none md:w-64">
-                                <i class="fa fa-search search-icon"></i>
-                                <input type="text" id="log-search" class="input search-input" placeholder="搜索用户ID/名称/群组...">
-                            </div>
-                            <button id="clear-logs-btn" class="btn btn-danger">
-                                <i class="fa fa-trash mr-1"></i> 清空日志
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <div class="filter-group">
-                        <button class="log-filter-btn btn filter-btn active" data-filter="all">全部</button>
-                        <button class="log-filter-btn btn filter-btn" data-filter="success">成功</button>
-                        <button class="log-filter-btn btn filter-btn" data-filter="failed">失败</button>
-                        <button class="log-filter-btn btn filter-btn" data-filter="skipped">已跳过</button>
-                    </div>
-                    
-                    <div class="logs-container">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>时间</th>
-                                    <th>用户信息</th>
-                                    <th>源群组</th>
-                                    <th>目标群组</th>
-                                    <th>状态</th>
-                                    <th>备注</th>
-                                </tr>
-                            </thead>
-                            <tbody id="logs-table-body">
-                                <tr>
-                                    <td colspan="6" class="text-center text-gray-600">加载日志中...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <div class="pagination">
-                        <div class="pagination-info">共 <span id="logs-count">0</span> 条记录</div>
-                        <div class="pagination-buttons">
-                            <button id="prev-page" class="btn btn-secondary pagination-btn" disabled>上一页</button>
-                            <button id="next-page" class="btn btn-secondary pagination-btn" disabled>下一页</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- 底部导航 -->
-    <footer>
-        <div class="container footer-content">
-            Telegram 群组用户转移管理系统 © 2024 | 最后更新: <span id="last-update">-</span>
-        </div>
-    </footer>
-
-    <!-- 提示框 -->
-    <div id="success-toast" class="toast" style="background-color: #34C759;">
-        <i class="fa fa-check-circle"></i>
-        <span id="success-message">操作成功</span>
-    </div>
-    <div id="error-toast" class="toast" style="background-color: #FF3B30;">
-        <i class="fa fa-exclamation-circle"></i>
-        <span id="error-message">操作失败</span>
-    </div>
-    <div id="loading-toast" class="toast" style="background-color: #1C1C1E;">
-        <i class="fa fa-circle-o-notch fa-spin"></i>
-        <span id="loading-message">处理中...</span>
-    </div>
-
-    <!-- 确认弹窗 -->
-    <div id="confirm-modal" class="modal">
-        <div class="modal-content">
-            <h3 class="modal-title" id="confirm-title">确认操作</h3>
-            <p class="modal-message" id="confirm-message">你确定要执行此操作吗？</p>
-            <div class="modal-buttons">
-                <button id="confirm-cancel" class="btn btn-secondary">取消</button>
-                <button id="confirm-ok" class="btn btn-danger">确认</button>
+        <!-- 操作日志 -->
+        <div class="card">
+            <h2>操作日志</h2>
+            <div class="logs" id="logsList">
+                <!-- 日志将动态加载 -->
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script>
-        // 存储本地数据的键名
-        const LOCAL_STORAGE_KEYS = {
-            API_BASE_URL: 'telegram_manager_api_base_url',
-            SOURCE_GROUPS: 'telegram_manager_source_groups',
-            TARGET_GROUPS: 'telegram_manager_target_groups',
-            TRANSFER_SETTINGS: 'telegram_manager_transfer_settings',
-            TRANSFER_LOGS: 'telegram_manager_transfer_logs',
-            TRANSFER_STATE: 'telegram_manager_transfer_state'
-        };
+        // 初始化Supabase
+        const SUPABASE_URL = 'https://telegram-laren.bingkuijing.workers.dev';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10bmR4ZnF4aXZnaXZid2FtamduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyNDc1MDQsImV4cCI6MjA3MzgyMzUwNH0.s7LQxin9OyNLUTQsrv0EK1z60CcmqhyGAjDY-A17Yy0';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // 初始化本地存储数据
-        function initLocalStorage() {
-            // 如果没有API地址，使用默认值
-            if (!localStorage.getItem(LOCAL_STORAGE_KEYS.API_BASE_URL)) {
-                localStorage.setItem(LOCAL_STORAGE_KEYS.API_BASE_URL, 
-                    'https://telegram-laren.bingkuijing.workers.dev');
-                document.getElementById('api-base-url').value = 
-                    'https://telegram-laren.bingkuijing.workers.dev';
+        // 保存配置
+        async function saveConfig() {
+            const sourceChats = document.getElementById('sourceChat').value.split(',').map(id => id.trim()).filter(id => id);
+            const targetChat = document.getElementById('targetChat').value.trim();
+
+            if (!targetChat) {
+                alert('请输入目标群组ID');
+                return;
+            }
+
+            // 检查配置表是否存在记录，不存在则插入，存在则更新
+            const { data, error } = await supabase
+                .from('config')
+                .select('id')
+                .single();
+
+            if (error && error.code !== 'PGRST116') { // PGRST116表示没有找到记录
+                console.error('Error checking config:', error);
+                return;
+            }
+
+            if (data) {
+                // 更新
+                const { error: updateError } = await supabase
+                    .from('config')
+                    .update({ 
+                        source_chats: sourceChats, 
+                        target_chat: targetChat,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', data.id);
+                if (updateError) {
+                    console.error('Error updating config:', updateError);
+                } else {
+                    alert('配置更新成功');
+                    loadConfig();
+                }
             } else {
-                document.getElementById('api-base-url').value = 
-                    localStorage.getItem(LOCAL_STORAGE_KEYS.API_BASE_URL);
-            }
-            
-            // 如果没有源群组数据，初始化空数组
-            if (!localStorage.getItem(LOCAL_STORAGE_KEYS.SOURCE_GROUPS)) {
-                localStorage.setItem(LOCAL_STORAGE_KEYS.SOURCE_GROUPS, JSON.stringify([]));
-            }
-            
-            // 如果没有目标群组数据，初始化空数组
-            if (!localStorage.getItem(LOCAL_STORAGE_KEYS.TARGET_GROUPS)) {
-                localStorage.setItem(LOCAL_STORAGE_KEYS.TARGET_GROUPS, JSON.stringify([]));
-            }
-            
-            // 如果没有转移设置，初始化默认设置
-            if (!localStorage.getItem(LOCAL_STORAGE_KEYS.TRANSFER_SETTINGS)) {
-                const defaultSettings = {
-                    batch_size: 5,
-                    batch_interval: 600,
-                    message_limit: 500,
-                    filters: {
-                        filter_bots: true,
-                        filter_admins: true,
-                        filter_existing: true,
-                        min_messages: 1
-                    }
-                };
-                localStorage.setItem(LOCAL_STORAGE_KEYS.TRANSFER_SETTINGS, JSON.stringify(defaultSettings));
-            }
-            
-            // 如果没有日志数据，初始化空数组
-            if (!localStorage.getItem(LOCAL_STORAGE_KEYS.TRANSFER_LOGS)) {
-                localStorage.setItem(LOCAL_STORAGE_KEYS.TRANSFER_LOGS, JSON.stringify([]));
-            }
-            
-            // 如果没有转移状态，初始化默认状态
-            if (!localStorage.getItem(LOCAL_STORAGE_KEYS.TRANSFER_STATE)) {
-                const defaultState = {
-                    running: false,
-                    completed: false,
-                    progress: 0,
-                    processed: 0,
-                    total: 0,
-                    current_group: '',
-                    rate: 0
-                };
-                localStorage.setItem(LOCAL_STORAGE_KEYS.TRANSFER_STATE, JSON.stringify(defaultState));
-            }
-        }
-
-        // 获取API基础地址
-        function getApiBaseUrl() {
-            return localStorage.getItem(LOCAL_STORAGE_KEYS.API_BASE_URL) || 
-                   'https://telegram-laren.bingkuijing.workers.dev';
-        }
-
-        // 保存API配置
-        function saveApiConfig() {
-            const apiUrl = document.getElementById('api-base-url').value.trim();
-            if (apiUrl) {
-                localStorage.setItem(LOCAL_STORAGE_KEYS.API_BASE_URL, apiUrl);
-                showToast('success', 'API配置已保存');
-                
-                // 重新加载所有数据
-                setTimeout(async () => {
-                    await loadAllData();
-                }, 1000);
-            } else {
-                showToast('error', '请输入有效的API地址');
-            }
-        }
-
-        // 从本地存储获取源群组
-        function getSourceGroups() {
-            const groups = localStorage.getItem(LOCAL_STORAGE_KEYS.SOURCE_GROUPS);
-            return groups ? JSON.parse(groups) : [];
-        }
-
-        // 保存源群组到本地存储
-        function saveSourceGroups(groups) {
-            localStorage.setItem(LOCAL_STORAGE_KEYS.SOURCE_GROUPS, JSON.stringify(groups));
-        }
-
-        // 从本地存储获取目标群组
-        function getTargetGroups() {
-            const groups = localStorage.getItem(LOCAL_STORAGE_KEYS.TARGET_GROUPS);
-            return groups ? JSON.parse(groups) : [];
-        }
-
-        // 保存目标群组到本地存储
-        function saveTargetGroups(groups) {
-            localStorage.setItem(LOCAL_STORAGE_KEYS.TARGET_GROUPS, JSON.stringify(groups));
-        }
-
-        // 从本地存储获取转移设置
-        function getTransferSettings() {
-            const settings = localStorage.getItem(LOCAL_STORAGE_KEYS.TRANSFER_SETTINGS);
-            return settings ? JSON.parse(settings) : {
-                batch_size: 5,
-                batch_interval: 600,
-                message_limit: 500,
-                filters: {
-                    filter_bots: true,
-                    filter_admins: true,
-                    filter_existing: true,
-                    min_messages: 1
-                }
-            };
-        }
-
-        // 保存转移设置到本地存储
-        function saveTransferSettings(settings) {
-            localStorage.setItem(LOCAL_STORAGE_KEYS.TRANSFER_SETTINGS, JSON.stringify(settings));
-        }
-
-        // 从本地存储获取日志
-        function getLogs() {
-            const logs = localStorage.getItem(LOCAL_STORAGE_KEYS.TRANSFER_LOGS);
-            return logs ? JSON.parse(logs) : [];
-        }
-
-        // 保存日志到本地存储
-        function saveLogs(logs) {
-            localStorage.setItem(LOCAL_STORAGE_KEYS.TRANSFER_LOGS, JSON.stringify(logs));
-        }
-
-        // 添加日志记录
-        function addLog(log) {
-            const logs = getLogs();
-            log.id = Date.now(); // 使用时间戳作为ID
-            log.created_at = new Date().toISOString();
-            logs.unshift(log); // 添加到数组开头
-            // 限制日志数量为1000条
-            if (logs.length > 1000) {
-                logs.pop();
-            }
-            saveLogs(logs);
-            return log;
-        }
-
-        // 从本地存储获取转移状态
-        function getTransferState() {
-            const state = localStorage.getItem(LOCAL_STORAGE_KEYS.TRANSFER_STATE);
-            return state ? JSON.parse(state) : {
-                running: false,
-                completed: false,
-                progress: 0,
-                processed: 0,
-                total: 0,
-                current_group: '',
-                rate: 0
-            };
-        }
-
-        // 保存转移状态到本地存储
-        function saveTransferState(state) {
-            localStorage.setItem(LOCAL_STORAGE_KEYS.TRANSFER_STATE, JSON.stringify(state));
-        }
-
-        // 初始化图表
-        let transferChart = null;
-        function initChart() {
-            const ctx = document.getElementById('transfer-chart').getContext('2d');
-            
-            // 准备过去7天的日期标签
-            const labels = [];
-            for (let i = 6; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                labels.push(`${date.getMonth() + 1}/${date.getDate()}`);
-            }
-            
-            // 准备过去7天的数据
-            const logs = getLogs();
-            const data = new Array(7).fill(0);
-            
-            logs.forEach(log => {
-                if (log.status === 'success') {
-                    const logDate = new Date(log.created_at);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    
-                    const diffTime = today - logDate;
-                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                    
-                    if (diffDays >= 0 && diffDays < 7) {
-                        data[6 - diffDays]++;
-                    }
-                }
-            });
-            
-            transferChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '转移用户数',
-                        data: data,
-                        borderColor: '#007AFF',
-                        backgroundColor: 'rgba(0, 122, 255, 0.1)',
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // 显示提示框
-        function showToast(type, message) {
-            let toast, messageEl;
-            
-            if (type === 'success') {
-                toast = document.getElementById('success-toast');
-                messageEl = document.getElementById('success-message');
-            } else if (type === 'error') {
-                toast = document.getElementById('error-toast');
-                messageEl = document.getElementById('error-message');
-            } else if (type === 'loading') {
-                toast = document.getElementById('loading-toast');
-                messageEl = document.getElementById('loading-message');
-            }
-            
-            if (toast && messageEl) {
-                messageEl.textContent = message;
-                toast.classList.add('show');
-                
-                if (type !== 'loading') {
-                    setTimeout(() => {
-                        toast.classList.remove('show');
-                    }, 3000);
-                }
-            }
-        }
-
-        // 隐藏加载提示
-        function hideLoading() {
-            const loadingToast = document.getElementById('loading-toast');
-            loadingToast.classList.remove('show');
-        }
-
-        // 显示确认弹窗
-        function showConfirm(title, message, confirmCallback) {
-            const modal = document.getElementById('confirm-modal');
-            const titleEl = document.getElementById('confirm-title');
-            const messageEl = document.getElementById('confirm-message');
-            const confirmOk = document.getElementById('confirm-ok');
-            const confirmCancel = document.getElementById('confirm-cancel');
-            
-            titleEl.textContent = title;
-            messageEl.textContent = message;
-            modal.classList.add('show');
-            
-            // 移除之前的事件监听
-            const newConfirmOk = confirmOk.cloneNode(true);
-            const newConfirmCancel = confirmCancel.cloneNode(true);
-            confirmOk.parentNode.replaceChild(newConfirmOk, confirmOk);
-            confirmCancel.parentNode.replaceChild(newConfirmCancel, confirmCancel);
-            
-            // 添加新的事件监听
-            newConfirmOk.addEventListener('click', () => {
-                modal.classList.remove('show');
-                confirmCallback();
-            });
-            
-            newConfirmCancel.addEventListener('click', () => {
-                modal.classList.remove('show');
-            });
-        }
-
-        // API请求函数
-        async function apiRequest(endpoint, method = 'GET', data = null) {
-            try {
-                const apiBaseUrl = getApiBaseUrl();
-                const url = `${apiBaseUrl}${endpoint}`;
-                
-                const options = {
-                    method,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                };
-
-                if (data) {
-                    options.body = JSON.stringify(data);
-                }
-
-                const response = await fetch(url, options);
-
-                // 检查HTTP错误状态
-                if (!response.ok) {
-                    // 尝试解析错误响应
-                    let errorMessage = `HTTP错误: ${response.status}`;
-                    try {
-                        const errorData = await response.json();
-                        if (errorData.error) {
-                            errorMessage = errorData.error;
-                        }
-                    } catch (e) {
-                        // 如果无法解析JSON，使用默认错误消息
-                    }
-                    
-                    // 对于404错误，提供更友好的提示
-                    if (response.status === 404) {
-                        errorMessage = 'API端点不存在，请检查API地址是否正确';
-                    }
-                    
-                    throw new Error(errorMessage);
-                }
-
-                // 处理空响应
-                const contentLength = response.headers.get('Content-Length');
-                if (contentLength && parseInt(contentLength) === 0) {
-                    return { success: true };
-                }
-
-                return await response.json();
-            } catch (error) {
-                console.error('API请求错误:', error);
-                // 网络错误的特殊处理
-                if (error.message.includes('Failed to fetch')) {
-                    showToast('error', '无法连接到API服务器，请检查地址是否正确');
+                // 插入
+                const { error: insertError } = await supabase
+                    .from('config')
+                    .insert([{ 
+                        source_chats: sourceChats, 
+                        target_chat: targetChat,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }]);
+                if (insertError) {
+                    console.error('Error inserting config:', insertError);
                 } else {
-                    showToast('error', error.message || '操作失败，请重试');
+                    alert('配置保存成功');
+                    loadConfig();
                 }
-                throw error;
             }
         }
 
-        // 加载群组配置
-        async function loadGroupConfig() {
-            try {
-                showToast('loading', '加载群组配置...');
+        // 加载配置
+        async function loadConfig() {
+            const { data, error } = await supabase
+                .from('config')
+                .select('*')
+                .single();
+
+            if (error && error.code !== 'PGRST116') {
+                console.error('Error loading config:', error);
+                return;
+            }
+
+            if (data) {
+                document.getElementById('sourceChat').value = data.source_chats.join(',');
+                document.getElementById('targetChat').value = data.target_chat;
+                document.getElementById('currentSource').textContent = data.source_chats.join(', ');
+                document.getElementById('currentTarget').textContent = data.target_chat;
                 
-                // 先尝试从API加载
-                let sources = [];
-                let targets = [];
-                
-                try {
-                    const config = await apiRequest('/groups/config');
-                    sources = config.sources || [];
-                    targets = config.targets || [];
-                    
-                    // 保存到本地存储
-                    saveSourceGroups(sources);
-                    saveTargetGroups(targets);
-                } catch (error) {
-                    console.warn('从API加载群组配置失败，使用本地存储数据:', error);
-                    sources = getSourceGroups();
-                    targets = getTargetGroups();
-                }
-                
-                // 更新源群组列表
-                const sourceGroupsList = document.getElementById('source-groups-list');
-                sourceGroupsList.innerHTML = '';
-                
-                if (sources.length === 0) {
-                    sourceGroupsList.innerHTML = '<div class="badge group-badge">未设置源群组</div>';
+                // 检查运行状态
+                const runningStatus = document.getElementById('runningStatus');
+                if (data.is_running) {
+                    runningStatus.innerHTML = '<span class="status-indicator status-running"></span>运行中';
                 } else {
-                    sources.forEach(group => {
-                        const badge = document.createElement('div');
-                        badge.className = 'badge group-badge';
-                        badge.textContent = `${group.group_name} (${group.group_id})`;
-                        sourceGroupsList.appendChild(badge);
-                    });
+                    runningStatus.innerHTML = '<span class="status-indicator status-stopped"></span>已停止';
                 }
-                
-                // 更新目标群组列表
-                const targetGroupsList = document.getElementById('target-groups-list');
-                targetGroupsList.innerHTML = '';
-                
-                if (targets.length === 0) {
-                    targetGroupsList.innerHTML = '<div class="badge target-badge">未设置目标群组</div>';
-                } else {
-                    targets.forEach(group => {
-                        const badge = document.createElement('div');
-                        badge.className = 'badge target-badge';
-                        badge.textContent = `${group.group_name} (${group.group_id})`;
-                        targetGroupsList.appendChild(badge);
-                        
-                        // 填充目标群组表单（第一个目标群组）
-                        document.getElementById('target-group-id').value = group.group_id;
-                        document.getElementById('target-group-name').value = group.group_name;
-                    });
-                }
-                
-                // 更新统计
-                document.getElementById('active-sources').textContent = sources.length;
-                document.getElementById('active-targets').textContent = targets.length;
-                
-                // 加载已配置群组列表
-                loadConfiguredGroups();
-                
-                return { sources, targets };
-            } catch (error) {
-                console.error('加载群组配置失败:', error);
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // 加载已配置群组列表
-        function loadConfiguredGroups() {
-            // 源群组
-            const configuredSources = document.getElementById('configured-sources');
-            configuredSources.innerHTML = '';
-            
-            const sourceGroups = getSourceGroups();
-            if (sourceGroups.length === 0) {
-                configuredSources.innerHTML = '<div class="text-center text-gray-600 py-3">暂无源群组配置</div>';
-            } else {
-                sourceGroups.forEach((group, index) => {
-                    const groupEl = document.createElement('div');
-                    groupEl.className = 'list-item';
-                    
-                    groupEl.innerHTML = `
-                        <div class="list-item-content">
-                            <div class="list-item-title">${group.group_name}</div>
-                            <div class="list-item-subtitle">ID: ${group.group_id}</div>
-                        </div>
-                        <button class="delete-source-btn btn btn-danger p-2" data-index="${index}">
-                            <i class="fa fa-trash"></i>
-                        </button>
-                    `;
-                    
-                    configuredSources.appendChild(groupEl);
-                });
-                
-                // 绑定删除事件
-                document.querySelectorAll('.delete-source-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const index = parseInt(e.currentTarget.getAttribute('data-index'));
-                        showConfirm(
-                            '删除群组',
-                            '确定要删除这个源群组吗？',
-                            () => {
-                                const sources = getSourceGroups();
-                                sources.splice(index, 1);
-                                saveSourceGroups(sources);
-                                
-                                // 同时更新API（如果可能）
-                                try {
-                                    apiRequest('/groups/config', 'POST', {
-                                        sources,
-                                        targets: getTargetGroups()
-                                    });
-                                } catch (error) {
-                                    console.warn('更新API源群组失败:', error);
-                                }
-                                
-                                showToast('success', '源群组已删除');
-                                loadGroupConfig();
-                            }
-                        );
-                    });
-                });
-            }
-            
-            // 目标群组
-            const configuredTargets = document.getElementById('configured-targets');
-            configuredTargets.innerHTML = '';
-            
-            const targetGroups = getTargetGroups();
-            if (targetGroups.length === 0) {
-                configuredTargets.innerHTML = '<div class="text-center text-gray-600 py-3">暂无目标群组配置</div>';
-            } else {
-                targetGroups.forEach((group, index) => {
-                    const groupEl = document.createElement('div');
-                    groupEl.className = 'list-item';
-                    
-                    groupEl.innerHTML = `
-                        <div class="list-item-content">
-                            <div class="list-item-title">${group.group_name}</div>
-                            <div class="list-item-subtitle">ID: ${group.group_id}</div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button class="edit-target-btn btn btn-secondary p-2" data-index="${index}">
-                                <i class="fa fa-pencil"></i>
-                            </button>
-                            <button class="delete-target-btn btn btn-danger p-2" data-index="${index}">
-                                <i class="fa fa-trash"></i>
-                            </button>
-                        </div>
-                    `;
-                    
-                    configuredTargets.appendChild(groupEl);
-                });
-                
-                // 绑定编辑和删除事件
-                document.querySelectorAll('.edit-target-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const index = parseInt(e.currentTarget.getAttribute('data-index'));
-                        const targets = getTargetGroups();
-                        const group = targets[index];
-                        
-                        document.getElementById('target-group-id').value = group.group_id;
-                        document.getElementById('target-group-name').value = group.group_name;
-                        
-                        // 滚动到目标群组表单
-                        document.getElementById('target-group-id').scrollIntoView({ behavior: 'smooth' });
-                    });
-                });
-                
-                document.querySelectorAll('.delete-target-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const index = parseInt(e.currentTarget.getAttribute('data-index'));
-                        showConfirm(
-                            '删除群组',
-                            '确定要删除这个目标群组吗？',
-                            () => {
-                                const targets = getTargetGroups();
-                                targets.splice(index, 1);
-                                saveTargetGroups(targets);
-                                
-                                // 同时更新API（如果可能）
-                                try {
-                                    apiRequest('/groups/config', 'POST', {
-                                        sources: getSourceGroups(),
-                                        targets
-                                    });
-                                } catch (error) {
-                                    console.warn('更新API目标群组失败:', error);
-                                }
-                                
-                                showToast('success', '目标群组已删除');
-                                loadGroupConfig();
-                            }
-                        );
-                    });
-                });
-            }
-        }
-
-        // 加载统计数据
-        function loadStats() {
-            try {
-                const logs = getLogs();
-                
-                // 计算统计
-                const total = logs.length;
-                const success = logs.filter(l => l.status === 'success').length;
-                const successRate = total > 0 ? Math.round((success / total) * 100) : 0;
-                
-                // 更新统计
-                document.getElementById('total-transferred').textContent = success;
-                document.getElementById('success-rate').textContent = `${successRate}%`;
-                
-                // 更新图表
-                if (transferChart) {
-                    // 准备过去7天的数据
-                    const data = new Array(7).fill(0);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    
-                    logs.forEach(log => {
-                        if (log.status === 'success') {
-                            const logDate = new Date(log.created_at);
-                            const diffTime = today - logDate;
-                            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                            
-                            if (diffDays >= 0 && diffDays < 7) {
-                                data[6 - diffDays]++;
-                            }
-                        }
-                    });
-                    
-                    transferChart.data.datasets[0].data = data;
-                    transferChart.update();
-                }
-                
-                // 更新最近日志
-                loadRecentLogs();
-                
-                return { total, success, successRate };
-            } catch (error) {
-                console.error('加载统计数据失败:', error);
-            }
-        }
-
-        // 加载最近日志
-        function loadRecentLogs() {
-            try {
-                const logs = getLogs().slice(0, 5); // 获取最近5条日志
-                const recentLogs = document.getElementById('recent-logs');
-                
-                recentLogs.innerHTML = '';
-                
-                if (logs.length === 0) {
-                    recentLogs.innerHTML = '<div class="text-center text-gray-600 py-3">暂无转移记录</div>';
-                    return;
-                }
-                
-                logs.forEach(log => {
-                    const logEl = createLogElement(log);
-                    recentLogs.appendChild(logEl);
-                });
-            } catch (error) {
-                console.error('加载最近日志失败:', error);
-            }
-        }
-
-        // 创建日志元素
-        function createLogElement(log) {
-            const logEl = document.createElement('div');
-            let statusClass, statusText, statusColor;
-            
-            switch (log.status) {
-                case 'success':
-                    statusClass = 'log-item-success';
-                    statusText = '成功';
-                    statusColor = 'log-status-success';
-                    break;
-                case 'failed':
-                    statusClass = 'log-item-failed';
-                    statusText = '失败';
-                    statusColor = 'log-status-failed';
-                    break;
-                case 'skipped':
-                    statusClass = 'log-item-skipped';
-                    statusText = '已跳过';
-                    statusColor = 'log-status-skipped';
-                    break;
-                default:
-                    statusClass = '';
-                    statusText = log.status;
-                    statusColor = '';
-            }
-            
-            logEl.className = `log-item ${statusClass}`;
-            
-            const date = new Date(log.created_at);
-            const formattedDate = date.toLocaleString('zh-CN');
-            
-            logEl.innerHTML = `
-                <div class="log-header">
-                    <div class="log-user">${log.user_name || '未知用户'}</div>
-                    <span class="log-status ${statusColor}">${statusText}</span>
-                </div>
-                <div class="log-details">
-                    从 ${log.source_group_name || '未知群组'} 转移到 ${log.target_group_name || '未知群组'}
-                </div>
-                <div class="log-time">${formattedDate}</div>
-                ${log.reason ? `<div class="log-reason">原因: ${log.reason}</div>` : ''}
-            `;
-            
-            return logEl;
-        }
-
-        // 加载完整日志
-        let currentPage = 1;
-        const PAGE_SIZE = 20;
-        let totalLogs = 0;
-        
-        function loadLogs(filter = 'all', page = 1) {
-            try {
-                showToast('loading', '加载日志...');
-                currentPage = page;
-                
-                // 获取所有日志
-                let allLogs = getLogs();
-                
-                // 应用筛选
-                if (filter !== 'all') {
-                    allLogs = allLogs.filter(log => log.status === filter);
-                }
-                
-                totalLogs = allLogs.length;
-                
-                // 分页处理
-                const startIndex = (page - 1) * PAGE_SIZE;
-                const endIndex = startIndex + PAGE_SIZE;
-                const logs = allLogs.slice(startIndex, endIndex);
-                
-                const tableBody = document.getElementById('logs-table-body');
-                tableBody.innerHTML = '';
-                
-                if (logs.length === 0) {
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td colspan="6" class="text-center text-gray-600">
-                                ${totalLogs === 0 ? '暂无日志记录' : '当前页没有日志'}
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    logs.forEach(log => {
-                        const tr = document.createElement('tr');
-                        
-                        // 设置行背景色
-                        if (log.status === 'success') {
-                            tr.style.backgroundColor = 'rgba(52, 199, 89, 0.05)';
-                        } else if (log.status === 'failed') {
-                            tr.style.backgroundColor = 'rgba(255, 59, 48, 0.05)';
-                        } else if (log.status === 'skipped') {
-                            tr.style.backgroundColor = 'rgba(255, 204, 0, 0.05)';
-                        }
-                        
-                        // 格式化时间
-                        const date = new Date(log.created_at);
-                        const formattedTime = date.toLocaleString('zh-CN');
-                        
-                        // 设置状态样式
-                        let statusClass, statusText;
-                        switch (log.status) {
-                            case 'success':
-                                statusClass = 'bg-green-100 text-green-800';
-                                statusText = '成功';
-                                break;
-                            case 'failed':
-                                statusClass = 'bg-red-100 text-red-800';
-                                statusText = '失败';
-                                break;
-                            case 'skipped':
-                                statusClass = 'bg-yellow-100 text-yellow-800';
-                                statusText = '已跳过';
-                                break;
-                            default:
-                                statusClass = 'bg-gray-100 text-gray-800';
-                                statusText = log.status;
-                        }
-                        
-                        tr.innerHTML = `
-                            <td class="whitespace-nowrap">${formattedTime}</td>
-                            <td class="whitespace-nowrap">
-                                ${log.user_name || '未知用户'} (${log.user_id})
-                            </td>
-                            <td class="whitespace-nowrap">
-                                ${log.source_group_name || '未知群组'} (${log.source_group_id})
-                            </td>
-                            <td class="whitespace-nowrap">
-                                ${log.target_group_name || '未知群组'} (${log.target_group_id})
-                            </td>
-                            <td>
-                                <span class="badge ${statusClass}">${statusText}</span>
-                            </td>
-                            <td>${log.reason || '-'}</td>
-                        `;
-                        
-                        tableBody.appendChild(tr);
-                    });
-                }
-                
-                // 更新分页控件
-                document.getElementById('logs-count').textContent = totalLogs;
-                const prevBtn = document.getElementById('prev-page');
-                const nextBtn = document.getElementById('next-page');
-                
-                prevBtn.disabled = page <= 1;
-                nextBtn.disabled = page * PAGE_SIZE >= totalLogs;
-                
-                return logs;
-            } catch (error) {
-                console.error('加载日志失败:', error);
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // 添加源群组
-        async function addSourceGroup() {
-            try {
-                const groupId = document.getElementById('source-group-id').value.trim();
-                const groupName = document.getElementById('source-group-name').value.trim();
-                
-                if (!groupId || !groupName) {
-                    showToast('error', '请填写群组ID和名称');
-                    return;
-                }
-                
-                // 验证群组ID格式
-                if (!/^-?\d+$/.test(groupId)) {
-                    showToast('error', '群组ID格式无效（应为数字）');
-                    return;
-                }
-                
-                showToast('loading', '添加中...');
-                
-                // 检查是否已存在
-                const sources = getSourceGroups();
-                const exists = sources.some(g => g.group_id == groupId);
-                
-                if (exists) {
-                    showToast('error', '该群组已作为源群组存在');
-                    return;
-                }
-                
-                // 添加新群组
-                const newGroup = {
-                    group_id: groupId,
-                    group_name: groupName
-                };
-                
-                sources.push(newGroup);
-                saveSourceGroups(sources);
-                
-                // 同时更新API（如果可能）
-                try {
-                    await apiRequest('/groups/config', 'POST', {
-                        sources,
-                        targets: getTargetGroups()
-                    });
-                } catch (error) {
-                    console.warn('更新API源群组失败，但已保存到本地:', error);
-                }
-                
-                showToast('success', '源群组添加成功');
-                
-                // 清空表单
-                document.getElementById('source-group-id').value = '';
-                document.getElementById('source-group-name').value = '';
-                
-                // 重新加载配置
-                loadGroupConfig();
-            } catch (error) {
-                console.error('添加源群组失败:', error);
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // 保存目标群组
-        async function saveTargetGroup() {
-            try {
-                const groupId = document.getElementById('target-group-id').value.trim();
-                const groupName = document.getElementById('target-group-name').value.trim();
-                
-                if (!groupId || !groupName) {
-                    showToast('error', '请填写目标群组ID和名称');
-                    return;
-                }
-                
-                // 验证群组ID格式
-                if (!/^-?\d+$/.test(groupId)) {
-                    showToast('error', '群组ID格式无效（应为数字）');
-                    return;
-                }
-                
-                showToast('loading', '保存中...');
-                
-                // 获取现有目标群组
-                let targets = getTargetGroups();
-                
-                // 检查是否已存在
-                const existingIndex = targets.findIndex(g => g.group_id == groupId);
-                
-                const targetGroup = {
-                    group_id: groupId,
-                    group_name: groupName
-                };
-                
-                if (existingIndex !== -1) {
-                    // 更新现有目标群组
-                    targets[existingIndex] = targetGroup;
-                } else {
-                    // 添加新目标群组（最多保留一个目标群组）
-                    targets = [targetGroup];
-                }
-                
-                saveTargetGroups(targets);
-                
-                // 同时更新API（如果可能）
-                try {
-                    await apiRequest('/groups/config', 'POST', {
-                        sources: getSourceGroups(),
-                        targets
-                    });
-                } catch (error) {
-                    console.warn('更新API目标群组失败，但已保存到本地:', error);
-                }
-                
-                showToast('success', existingIndex !== -1 ? '目标群组更新成功' : '目标群组添加成功');
-                
-                // 重新加载配置
-                loadGroupConfig();
-            } catch (error) {
-                console.error('保存目标群组失败:', error);
-            } finally {
-                hideLoading();
             }
         }
 
         // 开始转移
         async function startTransfer() {
-            try {
-                // 获取当前配置
-                const sources = getSourceGroups();
-                const targets = getTargetGroups();
-                
-                if (sources.length === 0) {
-                    showToast('error', '请先配置源群组');
-                    return;
-                }
-                
-                if (targets.length === 0) {
-                    showToast('error', '请先配置目标群组');
-                    return;
-                }
-                
-                showConfirm(
-                    '开始转移',
-                    '确定要开始用户转移吗？这将从所有源群组向目标群组转移符合条件的用户。',
-                    async () => {
-                        try {
-                            showToast('loading', '启动转移任务...');
-                            
-                            // 获取过滤设置
-                            const filters = {
-                                filter_bots: document.getElementById('filter-bots').checked,
-                                filter_admins: document.getElementById('filter-admins').checked,
-                                filter_existing: document.getElementById('filter-existing').checked,
-                                min_messages: parseInt(document.getElementById('min-messages').value) || 1
-                            };
-                            
-                            // 获取转移设置
-                            const settings = {
-                                batch_size: parseInt(document.getElementById('batch-size').value) || 5,
-                                batch_interval: parseInt(document.getElementById('batch-interval').value) || 600,
-                                message_limit: parseInt(document.getElementById('message-limit').value) || 500,
-                                filters
-                            };
-                            
-                            // 保存设置
-                            saveTransferSettings(settings);
-                            
-                            // 更新转移状态
-                            const transferState = {
-                                running: true,
-                                completed: false,
-                                progress: 0,
-                                processed: 0,
-                                total: sources.reduce((total, group) => total + (group.user_count || 50), 0), // 估算总数
-                                current_group: sources[0].group_name,
-                                rate: 0
-                            };
-                            saveTransferState(transferState);
-                            
-                            // 更新UI
-                            updateTransferStatusUI(transferState);
-                            
-                            // 尝试通知API开始转移
-                            try {
-                                await apiRequest('/transfer/start', 'POST', settings);
-                            } catch (error) {
-                                console.warn('通知API开始转移失败，但已在本地记录状态:', error);
-                            }
-                            
-                            showToast('success', '转移任务已启动');
-                            
-                            // 开始模拟进度更新（实际应用中应该由后端推送）
-                            startProgressSimulation();
-                        } catch (error) {
-                            console.error('启动转移失败:', error);
-                        } finally {
-                            hideLoading();
-                        }
-                    }
-                );
-            } catch (error) {
-                console.error('启动转移失败:', error);
+            const { error } = await supabase
+                .from('config')
+                .update({ is_running: true })
+                .eq('id', 1);
+            
+            if (error) {
+                console.error('Error starting transfer:', error);
+            } else {
+                alert('转移任务已启动');
+                loadConfig();
             }
         }
 
         // 停止转移
         async function stopTransfer() {
-            try {
-                const transferState = getTransferState();
-                if (!transferState.running) {
-                    showToast('error', '当前没有正在运行的转移任务');
-                    return;
-                }
-                
-                showConfirm(
-                    '停止转移',
-                    '确定要停止当前转移任务吗？未完成的转移将中断。',
-                    async () => {
-                        try {
-                            showToast('loading', '停止转移任务...');
-                            
-                            // 更新转移状态
-                            const newState = {
-                                ...transferState,
-                                running: false
-                            };
-                            saveTransferState(newState);
-                            
-                            // 更新UI
-                            updateTransferStatusUI(newState);
-                            
-                            // 尝试通知API停止转移
-                            try {
-                                await apiRequest('/transfer/stop', 'POST');
-                            } catch (error) {
-                                console.warn('通知API停止转移失败，但已在本地记录状态:', error);
-                            }
-                            
-                            // 停止进度模拟
-                            stopProgressSimulation();
-                            
-                            showToast('success', '转移任务已停止');
-                        } catch (error) {
-                            console.error('停止转移失败:', error);
-                        } finally {
-                            hideLoading();
-                        }
-                    }
-                );
-            } catch (error) {
-                console.error('停止转移失败:', error);
-            }
-        }
-
-        // 更新转移状态UI
-        function updateTransferStatusUI(state) {
-            if (state.running) {
-                document.getElementById('transfer-status').style.backgroundColor = 'rgba(52, 199, 89, 0.1)';
-                document.getElementById('transfer-status').style.color = '#34C759';
-                document.getElementById('transfer-status').textContent = '运行中';
-            } else if (state.completed) {
-                document.getElementById('transfer-status').style.backgroundColor = 'rgba(0, 122, 255, 0.1)';
-                document.getElementById('transfer-status').style.color = '#007AFF';
-                document.getElementById('transfer-status').textContent = '已完成';
+            const { error } = await supabase
+                .from('config')
+                .update({ is_running: false })
+                .eq('id', 1);
+            
+            if (error) {
+                console.error('Error stopping transfer:', error);
             } else {
-                document.getElementById('transfer-status').style.backgroundColor = '#F5F5F7';
-                document.getElementById('transfer-status').style.color = '#636366';
-                document.getElementById('transfer-status').textContent = '未运行';
-            }
-            
-            document.getElementById('current-group').textContent = state.current_group || '未知群组';
-            document.getElementById('processed-users').textContent = `${state.processed}/${state.total}`;
-            
-            const percent = state.total > 0 ? Math.round((state.processed / state.total) * 100) : 0;
-            document.getElementById('transfer-progress').style.width = `${percent}%`;
-            
-            // 更新预计完成时间
-            if (state.running && state.processed > 0 && state.rate > 0) {
-                const remaining = state.total - state.processed;
-                const remainingSeconds = Math.round(remaining / state.rate);
-                
-                const hours = Math.floor(remainingSeconds / 3600);
-                const minutes = Math.floor((remainingSeconds % 3600) / 60);
-                
-                let timeStr = '';
-                if (hours > 0) {
-                    timeStr += `${hours}小时`;
-                }
-                if (minutes > 0 || timeStr === '') {
-                    timeStr += `${minutes}分钟`;
-                }
-                
-                document.getElementById('estimated-time').textContent = timeStr;
-            } else {
-                document.getElementById('estimated-time').textContent = '-';
+                alert('转移任务已停止');
+                loadConfig();
             }
         }
 
-        // 进度模拟计时器
-        let progressInterval = null;
-        
-        // 开始进度模拟
-        function startProgressSimulation() {
-            // 先清除旧的计时器
-            if (progressInterval) {
-                clearInterval(progressInterval);
+        // 加载日志
+        async function loadLogs() {
+            const { data, error } = await supabase
+                .from('logs')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error) {
+                console.error('Error loading logs:', error);
+                return;
             }
-            
-            // 每30秒模拟一次进度更新
-            progressInterval = setInterval(() => {
-                const state = getTransferState();
-                if (!state.running) {
-                    clearInterval(progressInterval);
-                    progressInterval = null;
-                    return;
-                }
-                
-                // 获取配置
-                const sources = getSourceGroups();
-                const targets = getTargetGroups();
-                const settings = getTransferSettings();
-                
-                // 随机增加1-3个已处理用户
-                const newProcessed = state.processed + Math.floor(Math.random() * 3) + 1;
-                const newProgress = state.total > 0 ? Math.round((newProcessed / state.total) * 100) : 0;
-                
-                // 计算处理速率（每30秒）
-                const rate = (newProcessed - state.processed) / (30 / 60); // 每分钟处理数
-                
-                // 检查是否完成
-                let completed = false;
-                let currentGroup = state.current_group;
-                
-                if (newProcessed >= state.total) {
-                    completed = true;
-                    currentGroup = '已完成';
-                } else {
-                    // 随机切换当前处理的群组
-                    if (Math.random() > 0.7 && sources.length > 1) {
-                        const randomIndex = Math.floor(Math.random() * sources.length);
-                        currentGroup = sources[randomIndex].group_name;
-                    }
-                }
-                
-                // 更新状态
-                const newState = {
-                    ...state,
-                    processed: newProcessed,
-                    progress: newProgress,
-                    current_group: currentGroup,
-                    rate,
-                    completed
-                };
-                
-                saveTransferState(newState);
-                updateTransferStatusUI(newState);
-                
-                // 随机添加一条日志
-                if (Math.random() > 0.3) {
-                    const statusTypes = ['success', 'failed', 'skipped'];
-                    const randomStatus = statusTypes[Math.floor(Math.random() * (completed ? 1 : statusTypes.length))];
-                    
-                    const reasons = {
-                        success: '转移成功',
-                        failed: ['用户隐私设置限制', '用户不是 mutual contact', '频率限制'],
-                        skipped: ['用户是管理员', '用户是机器人', '用户已在目标群组']
-                    };
-                    
-                    let reason;
-                    if (randomStatus === 'success') {
-                        reason = reasons.success;
-                    } else if (randomStatus === 'failed') {
-                        reason = reasons.failed[Math.floor(Math.random() * reasons.failed.length)];
-                    } else {
-                        reason = reasons.skipped[Math.floor(Math.random() * reasons.skipped.length)];
-                    }
-                    
-                    // 随机用户ID和名称
-                    const userId = 100000000 + Math.floor(Math.random() * 900000000);
-                    const userName = `用户${userId.toString().slice(-4)}`;
-                    
-                    // 随机选择源群组
-                    const sourceGroup = sources[Math.floor(Math.random() * sources.length)];
-                    const targetGroup = targets[0] || { group_id: '未知', group_name: '未知' };
-                    
-                    // 添加日志
-                    addLog({
-                        user_id: userId,
-                        user_name: userName,
-                        source_group_id: sourceGroup.group_id,
-                        source_group_name: sourceGroup.group_name,
-                        target_group_id: targetGroup.group_id,
-                        target_group_name: targetGroup.group_name,
-                        status: randomStatus,
-                        reason
-                    });
-                    
-                    // 更新最近日志显示
-                    loadRecentLogs();
-                    loadStats();
-                }
-                
-                // 如果完成，停止计时器
-                if (completed) {
-                    clearInterval(progressInterval);
-                    progressInterval = null;
-                    loadStats();
-                }
-            }, 30000); // 30秒
-        }
 
-        // 停止进度模拟
-        function stopProgressSimulation() {
-            if (progressInterval) {
-                clearInterval(progressInterval);
-                progressInterval = null;
-            }
-        }
+            const logsList = document.getElementById('logsList');
+            logsList.innerHTML = '';
 
-        // 保存转移设置
-        function saveTransferSettingsUI() {
-            try {
-                showToast('loading', '保存设置...');
-                
-                const settings = {
-                    batch_size: parseInt(document.getElementById('batch-size').value) || 5,
-                    batch_interval: parseInt(document.getElementById('batch-interval').value) || 600,
-                    message_limit: parseInt(document.getElementById('message-limit').value) || 500,
-                    filters: {
-                        filter_bots: document.getElementById('filter-bots').checked,
-                        filter_admins: document.getElementById('filter-admins').checked,
-                        filter_existing: document.getElementById('filter-existing').checked,
-                        min_messages: parseInt(document.getElementById('min-messages').value) || 1
-                    }
-                };
-                
-                saveTransferSettings(settings);
-                
-                // 尝试通知API更新设置
-                try {
-                    apiRequest('/transfer/settings', 'POST', settings);
-                } catch (error) {
-                    console.warn('更新API设置失败，但已保存到本地:', error);
-                }
-                
-                showToast('success', '设置保存成功');
-            } catch (error) {
-                console.error('保存设置失败:', error);
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // 加载转移设置到UI
-        function loadTransferSettingsUI() {
-            try {
-                const settings = getTransferSettings();
-                
-                if (settings.batch_size) {
-                    document.getElementById('batch-size').value = settings.batch_size;
-                }
-                
-                if (settings.batch_interval) {
-                    document.getElementById('batch-interval').value = settings.batch_interval;
-                }
-                
-                if (settings.message_limit) {
-                    document.getElementById('message-limit').value = settings.message_limit;
-                }
-                
-                if (settings.filters) {
-                    document.getElementById('filter-bots').checked = settings.filters.filter_bots !== false;
-                    document.getElementById('filter-admins').checked = settings.filters.filter_admins !== false;
-                    document.getElementById('filter-existing').checked = settings.filters.filter_existing !== false;
-                    
-                    if (settings.filters.min_messages) {
-                        document.getElementById('min-messages').value = settings.filters.min_messages;
-                    }
-                }
-            } catch (error) {
-                console.error('加载设置失败:', error);
-                // 使用默认值
-                document.getElementById('batch-size').value = 5;
-                document.getElementById('batch-interval').value = 600;
-                document.getElementById('message-limit').value = 500;
-                document.getElementById('min-messages').value = 1;
-            }
-        }
-
-        // 重置设置为默认值
-        function resetSettings() {
-            showConfirm(
-                '恢复默认设置',
-                '确定要将所有转移设置恢复为默认值吗？',
-                () => {
-                    const defaultSettings = {
-                        batch_size: 5,
-                        batch_interval: 600,
-                        message_limit: 500,
-                        filters: {
-                            filter_bots: true,
-                            filter_admins: true,
-                            filter_existing: true,
-                            min_messages: 1
-                        }
-                    };
-                    
-                    // 更新UI
-                    document.getElementById('batch-size').value = 5;
-                    document.getElementById('batch-interval').value = 600;
-                    document.getElementById('message-limit').value = 500;
-                    document.getElementById('filter-bots').checked = true;
-                    document.getElementById('filter-admins').checked = true;
-                    document.getElementById('filter-existing').checked = true;
-                    document.getElementById('min-messages').value = 1;
-                    
-                    // 保存到本地
-                    saveTransferSettings(defaultSettings);
-                    
-                    // 尝试通知API
-                    try {
-                        apiRequest('/transfer/settings', 'POST', defaultSettings);
-                    } catch (error) {
-                        console.warn('重置API设置失败，但已保存到本地:', error);
-                    }
-                    
-                    showToast('success', '已恢复默认设置');
-                }
-            );
-        }
-
-        // 清空所有日志
-        function clearAllLogs() {
-            try {
-                showConfirm(
-                    '清空日志',
-                    '确定要清空所有操作日志吗？此操作不可恢复。',
-                    () => {
-                        try {
-                            showToast('loading', '清空日志...');
-                            
-                            // 清空本地日志
-                            saveLogs([]);
-                            
-                            // 尝试通知API清空日志
-                            try {
-                                apiRequest('/logs', 'DELETE');
-                            } catch (error) {
-                                console.warn('通知API清空日志失败，但已清空本地日志:', error);
-                            }
-                            
-                            // 更新日志显示
-                            loadLogs();
-                            loadRecentLogs();
-                            loadStats();
-                            
-                            showToast('success', '日志已清空');
-                        } catch (error) {
-                            console.error('清空日志失败:', error);
-                        } finally {
-                            hideLoading();
-                        }
-                    }
-                );
-            } catch (error) {
-                console.error('清空日志失败:', error);
-            }
-        }
-
-        // 清空所有群组配置
-        function clearAllGroups() {
-            try {
-                showConfirm(
-                    '清空群组配置',
-                    '确定要清空所有源群组和目标群组配置吗？此操作不可恢复。',
-                    () => {
-                        try {
-                            showToast('loading', '清空配置...');
-                            
-                            // 清空本地群组配置
-                            saveSourceGroups([]);
-                            saveTargetGroups([]);
-                            
-                            // 尝试通知API清空配置
-                            try {
-                                apiRequest('/groups/config', 'POST', {
-                                    sources: [],
-                                    targets: []
-                                });
-                            } catch (error) {
-                                console.warn('通知API清空群组配置失败，但已清空本地配置:', error);
-                            }
-                            
-                            // 更新群组显示
-                            loadGroupConfig();
-                            
-                            showToast('success', '所有群组配置已清空');
-                        } catch (error) {
-                            console.error('清空群组配置失败:', error);
-                        } finally {
-                            hideLoading();
-                        }
-                    }
-                );
-            } catch (error) {
-                console.error('清空群组配置失败:', error);
-            }
-        }
-
-        // 检查服务状态
-        async function checkServiceStatus() {
-            try {
-                let status = { running: false, transfer_running: false, transfer_completed: false };
-                
-                // 尝试从API获取状态
-                try {
-                    const apiStatus = await apiRequest('/status');
-                    status = {
-                        running: apiStatus.running || false,
-                        transfer_running: apiStatus.transfer_running || false,
-                        transfer_completed: apiStatus.transfer_completed || false
-                    };
-                } catch (error) {
-                    console.warn('从API获取状态失败，使用本地状态:', error);
-                    // 使用本地转移状态
-                    const transferState = getTransferState();
-                    status = {
-                        running: false, // API连接失败，标记为未运行
-                        transfer_running: transferState.running,
-                        transfer_completed: transferState.completed
-                    };
-                }
-                
-                const statusDot = document.getElementById('status-dot');
-                const statusText = document.getElementById('status-text');
-                
-                if (status.running) {
-                    statusDot.style.backgroundColor = '#34C759'; // 绿色
-                    statusText.textContent = '服务运行中';
-                } else {
-                    statusDot.style.backgroundColor = '#FF3B30'; // 红色
-                    statusText.textContent = '服务未连接';
-                }
-                
-                // 更新转移状态UI
-                const transferState = getTransferState();
-                updateTransferStatusUI({
-                    ...transferState,
-                    running: status.transfer_running,
-                    completed: status.transfer_completed
-                });
-                
-                // 更新最后更新时间
-                const now = new Date().toLocaleString('zh-CN');
-                document.getElementById('last-update').textContent = now;
-                
-                return status;
-            } catch (error) {
-                console.error('检查服务状态失败:', error);
-                const statusDot = document.getElementById('status-dot');
-                const statusText = document.getElementById('status-text');
-                
-                statusDot.style.backgroundColor = '#FF3B30'; // 红色
-                statusText.textContent = '连接失败';
-            }
-        }
-
-        // 加载所有数据
-        async function loadAllData() {
-            await Promise.all([
-                loadGroupConfig(),
-                loadStats(),
-                loadLogs(),
-                loadTransferSettingsUI(),
-                checkServiceStatus()
-            ]);
-        }
-
-        // 绑定事件
-        function bindEvents() {
-            // 标签页切换
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    // 移除所有活跃状态
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab-active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    
-                    // 设置当前标签为活跃
-                    tab.classList.add('tab-active');
-                    const tabId = tab.getAttribute('data-tab');
-                    document.getElementById(`${tabId}-tab`).classList.add('active');
-                    
-                    // 如果切换到日志标签，重新加载日志
-                    if (tabId === 'logs') {
-                        loadLogs();
-                    }
-                    
-                    // 如果切换到转移标签，加载设置
-                    if (tabId === 'transfer') {
-                        loadTransferSettingsUI();
-                    }
-                });
+            data.forEach(log => {
+                const logItem = document.createElement('div');
+                logItem.className = `log-item ${log.action}`;
+                const time = new Date(log.created_at).toLocaleString();
+                logItem.textContent = `[${time}] ${log.username} (${log.user_id}) - ${log.chat_name} - ${log.action}: ${log.message}`;
+                logsList.appendChild(logItem);
             });
-            
-            // 刷新按钮
-            document.getElementById('refresh-btn').addEventListener('click', async () => {
-                await loadAllData();
-                showToast('success', '数据已刷新');
-            });
-            
-            // 查看全部日志按钮
-            document.getElementById('view-all-logs-btn').addEventListener('click', () => {
-                // 切换到日志标签
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab-active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                
-                document.querySelector('[data-tab="logs"]').classList.add('tab-active');
-                document.getElementById('logs-tab').classList.add('active');
-                
-                // 加载日志
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            loadConfig();
+            loadLogs();
+            // 每10秒刷新一次日志和状态
+            setInterval(() => {
                 loadLogs();
-            });
-            
-            // 添加源群组按钮
-            document.getElementById('add-source-btn').addEventListener('click', addSourceGroup);
-            
-            // 保存目标群组按钮
-            document.getElementById('save-target-btn').addEventListener('click', saveTargetGroup);
-            
-            // 开始转移按钮
-            document.getElementById('start-transfer-btn').addEventListener('click', startTransfer);
-            
-            // 停止转移按钮
-            document.getElementById('stop-transfer-btn').addEventListener('click', stopTransfer);
-            
-            // 保存设置按钮
-            document.getElementById('save-settings-btn').addEventListener('click', saveTransferSettingsUI);
-            
-            // 重置设置按钮
-            document.getElementById('reset-settings-btn').addEventListener('click', resetSettings);
-            
-            // 应用过滤按钮
-            document.getElementById('apply-filters-btn').addEventListener('click', saveTransferSettingsUI);
-            
-            // 清空日志按钮
-            document.getElementById('clear-logs-btn').addEventListener('click', clearAllLogs);
-            
-            // 清空所有群组按钮
-            document.getElementById('clear-all-groups-btn').addEventListener('click', clearAllGroups);
-            
-            // 保存API配置按钮
-            document.getElementById('save-api-config').addEventListener('click', saveApiConfig);
-            
-            // 日志筛选按钮
-            document.querySelectorAll('.log-filter-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    // 移除所有活跃状态
-                    document.querySelectorAll('.log-filter-btn').forEach(b => {
-                        b.classList.remove('active');
-                    });
-                    
-                    // 设置当前按钮为活跃
-                    btn.classList.add('active');
-                    
-                    // 加载筛选后的日志
-                    const filter = btn.getAttribute('data-filter');
-                    loadLogs(filter);
-                });
-            });
-            
-            // 日志搜索
-            document.getElementById('log-search').addEventListener('input', (e) => {
-                const searchTerm = e.target.value.toLowerCase().trim();
-                
-                if (searchTerm.length < 2 && searchTerm.length > 0) {
-                    return; // 至少输入2个字符才搜索
-                }
-                
-                showToast('loading', '搜索中...');
-                
-                try {
-                    let logs;
-                    if (searchTerm === '') {
-                        // 空搜索，加载全部
-                        const activeFilter = document.querySelector('.log-filter-btn.active').getAttribute('data-filter');
-                        logs = loadLogs(activeFilter);
-                    } else {
-                        // 获取所有日志并应用当前筛选
-                        const activeFilter = document.querySelector('.log-filter-btn.active').getAttribute('data-filter');
-                        let allLogs = getLogs();
-                        
-                        if (activeFilter !== 'all') {
-                            allLogs = allLogs.filter(log => log.status === activeFilter);
-                        }
-                        
-                        // 搜索用户ID、用户名、群组名称
-                        logs = allLogs.filter(log => {
-                            const userId = log.user_id ? log.user_id.toString() : '';
-                            const userName = log.user_name ? log.user_name.toLowerCase() : '';
-                            const sourceGroup = log.source_group_name ? log.source_group_name.toLowerCase() : '';
-                            const targetGroup = log.target_group_name ? log.target_group_name.toLowerCase() : '';
-                            
-                            return userId.includes(searchTerm) ||
-                                   userName.includes(searchTerm) ||
-                                   sourceGroup.includes(searchTerm) ||
-                                   targetGroup.includes(searchTerm);
-                        });
-                        
-                        // 更新表格
-                        const tableBody = document.getElementById('logs-table-body');
-                        tableBody.innerHTML = '';
-                        
-                        if (logs.length === 0) {
-                            tableBody.innerHTML = `
-                                <tr>
-                                    <td colspan="6" class="text-center text-gray-600">
-                                        没有找到匹配的日志
-                                    </td>
-                                </tr>
-                            `;
-                        } else {
-                            logs.forEach(log => {
-                                const tr = document.createElement('tr');
-                                
-                                // 设置行背景色
-                                if (log.status === 'success') {
-                                    tr.style.backgroundColor = 'rgba(52, 199, 89, 0.05)';
-                                } else if (log.status === 'failed') {
-                                    tr.style.backgroundColor = 'rgba(255, 59, 48, 0.05)';
-                                } else if (log.status === 'skipped') {
-                                    tr.style.backgroundColor = 'rgba(255, 204, 0, 0.05)';
-                                }
-                                
-                                // 格式化时间
-                                const date = new Date(log.created_at);
-                                const formattedTime = date.toLocaleString('zh-CN');
-                                
-                                // 设置状态样式
-                                let statusClass, statusText;
-                                switch (log.status) {
-                                    case 'success':
-                                        statusClass = 'bg-green-100 text-green-800';
-                                        statusText = '成功';
-                                        break;
-                                    case 'failed':
-                                        statusClass = 'bg-red-100 text-red-800';
-                                        statusText = '失败';
-                                        break;
-                                    case 'skipped':
-                                        statusClass = 'bg-yellow-100 text-yellow-800';
-                                        statusText = '已跳过';
-                                        break;
-                                    default:
-                                        statusClass = 'bg-gray-100 text-gray-800';
-                                        statusText = log.status;
-                                }
-                                
-                                tr.innerHTML = `
-                                    <td class="whitespace-nowrap">${formattedTime}</td>
-                                    <td class="whitespace-nowrap">
-                                        ${log.user_name || '未知用户'} (${log.user_id})
-                                    </td>
-                                    <td class="whitespace-nowrap">
-                                        ${log.source_group_name || '未知群组'} (${log.source_group_id})
-                                    </td>
-                                    <td class="whitespace-nowrap">
-                                        ${log.target_group_name || '未知群组'} (${log.target_group_id})
-                                    </td>
-                                    <td>
-                                        <span class="badge ${statusClass}">${statusText}</span>
-                                    </td>
-                                    <td>${log.reason || '-'}</td>
-                                `;
-                                
-                                tableBody.appendChild(tr);
-                            });
-                        }
-                        
-                        document.getElementById('logs-count').textContent = logs.length;
-                        const prevBtn = document.getElementById('prev-page');
-                        const nextBtn = document.getElementById('next-page');
-                        
-                        prevBtn.disabled = true;
-                        nextBtn.disabled = true;
-                    }
-                } catch (error) {
-                    console.error('搜索日志失败:', error);
-                } finally {
-                    hideLoading();
-                }
-            });
-            
-            // 分页按钮
-            document.getElementById('prev-page').addEventListener('click', () => {
-                if (currentPage > 1) {
-                    const activeFilter = document.querySelector('.log-filter-btn.active').getAttribute('data-filter');
-                    loadLogs(activeFilter, currentPage - 1);
-                }
-            });
-            
-            document.getElementById('next-page').addEventListener('click', () => {
-                if (currentPage * PAGE_SIZE < totalLogs) {
-                    const activeFilter = document.querySelector('.log-filter-btn.active').getAttribute('data-filter');
-                    loadLogs(activeFilter, currentPage + 1);
-                }
-            });
-        }
-
-        // 页面加载完成后初始化
-        window.addEventListener('DOMContentLoaded', () => {
-            // 初始化本地存储
-            initLocalStorage();
-            
-            // 初始化图表
-            initChart();
-            
-            // 绑定事件
-            bindEvents();
-            
-            // 加载所有数据
-            loadAllData();
-            
-            // 设置定时器定期更新状态
-            setInterval(async () => {
-                await checkServiceStatus();
-            }, 60000); // 每分钟更新一次
-        });
+                loadConfig();
+            }, 10000);
+        };
     </script>
 </body>
 </html>
