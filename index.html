@@ -303,10 +303,15 @@
             }
 
             try {
+                // 修正FormData处理方式
+                const formData = new FormData();
+                formData.append('source', sourceGroup);
+                formData.append('target', targetGroup);
+                
                 // 发送转移请求
                 const response = await fetch(`${serverUrl}/transfer`, {
                     method: 'POST',
-                    body: new FormData().append('source', sourceGroup).append('target', targetGroup)
+                    body: formData
                 });
 
                 const result = await response.json();
