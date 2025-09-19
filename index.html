@@ -6,6 +6,20 @@
     <title>Telegram群组用户转移工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                    },
+                }
+            }
+        }
+    </script>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-4xl">
@@ -19,14 +33,17 @@
         <main class="bg-white rounded-xl shadow p-6 md:p-8 mb-8">
             <!-- 群组设置 -->
             <div class="mb-8">
-                <h2 class="text-xl font-semibold mb-4">群组设置</h2>
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fa fa-group text-primary mr-2"></i>群组设置
+                </h2>
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">源群组ID</label>
                         <input 
                             type="text" 
                             id="sourceGroup" 
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                            placeholder="例如: -2651659549"
                             value="-2651659549"
                         >
                     </div>
@@ -35,10 +52,29 @@
                         <input 
                             type="text" 
                             id="targetGroup" 
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                            placeholder="例如: -1002735235059"
                             value="-1002735235059"
                         >
                     </div>
+                </div>
+            </div>
+
+            <!-- Worker地址配置（新增） -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fa fa-link text-primary mr-2"></i>Worker配置
+                </h2>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Worker API地址</label>
+                    <input 
+                        type="text" 
+                        id="workerApiUrl" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                        placeholder="例如: https://proxy-7391.your-subdomain.workers.dev"
+                        value="https://proxy-7391.your-account-subdomain.workers.dev"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">https://telegram-laren.bingkuijing.workers.dev/</p>
                 </div>
             </div>
 
@@ -46,7 +82,7 @@
             <div class="mb-8 text-center">
                 <button 
                     id="startTransfer" 
-                    class="bg-primary hover:bg-primary/90 text-white font-medium px-6 py-3 rounded-lg shadow hover:shadow-lg transition-all"
+                    class="bg-primary hover:bg-primary/90 text-white font-medium px-6 py-3 rounded-lg shadow hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <i class="fa fa-play mr-2"></i>开始转移用户
                 </button>
@@ -54,7 +90,9 @@
 
             <!-- 转移状态 -->
             <div class="mb-8">
-                <h2 class="text-xl font-semibold mb-4">转移状态</h2>
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fa fa-bar-chart text-primary mr-2"></i>转移状态
+                </h2>
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <div class="mb-4">
                         <div class="flex justify-between text-sm mb-1">
@@ -62,7 +100,7 @@
                             <span id="progressPercent">0%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-3">
-                            <div id="progressBar" class="bg-primary h-3 rounded-full transition-all" style="width: 0%"></div>
+                            <div id="progressBar" class="bg-primary h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
                         </div>
                     </div>
 
@@ -77,7 +115,7 @@
                         </div>
                         <div class="bg-yellow-50 p-3 rounded-lg">
                             <p class="text-sm text-gray-600">已跳过</p>
-                            <p id="skippedUsers" class="text-xl font-semibold text-yellow-500">0</p>
+                            <p id="skippedUsers" class="text-xl font-semibold text-warning">0</p>
                         </div>
                         <div class="bg-purple-50 p-3 rounded-lg">
                             <p class="text-sm text-gray-600">状态</p>
@@ -89,18 +127,26 @@
 
             <!-- 操作日志 -->
             <div>
-                <h2 class="text-xl font-semibold mb-4">操作日志</h2>
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fa fa-history text-primary mr-2"></i>操作日志
+                </h2>
                 <div id="logContainer" class="bg-gray-900 text-gray-200 rounded-lg p-4 h-60 overflow-y-auto text-sm font-mono">
                     <p class="text-gray-400">等待操作开始...</p>
                 </div>
             </div>
         </main>
+
+        <footer class="text-center text-gray-500 text-sm">
+            <p>使用前请确保已获得群组管理员授权 | 遵守Telegram使用条款</p>
+        </footer>
     </div>
 
     <script>
-        // ################## 关键：替换为您的实际Worker地址 ##################
-        const API_BASE_URL = 'https://<worker-name>.<your-account-subdomain>.workers.dev
-'; 
+        // 从输入框获取Worker地址（允许用户动态修改）
+        function getApiBaseUrl() {
+            return document.getElementById('workerApiUrl').value.trim().replace(/\/$/, '');
+        }
+
         let statusPollInterval = null;
 
         // DOM元素
@@ -114,20 +160,38 @@
         const logContainer = document.getElementById('logContainer');
         const sourceGroupInput = document.getElementById('sourceGroup');
         const targetGroupInput = document.getElementById('targetGroup');
+        const workerApiInput = document.getElementById('workerApiUrl');
 
-        // 添加日志
-        function addLog(message) {
+        // 添加日志（支持不同级别）
+        function addLog(message, isError = false) {
             const timestamp = new Date().toLocaleTimeString();
             const logEntry = document.createElement('p');
+            logEntry.className = isError ? 'text-danger' : '';
             logEntry.innerHTML = `[${timestamp}] ${message}`;
             logContainer.appendChild(logEntry);
             logContainer.scrollTop = logContainer.scrollHeight;
         }
 
+        // 验证Worker地址
+        function validateWorkerUrl() {
+            const url = getApiBaseUrl();
+            if (!url) {
+                addLog('错误：请填写Worker API地址', true);
+                return false;
+            }
+            try {
+                new URL(url);
+                return true;
+            } catch (e) {
+                addLog('错误：Worker API地址格式不正确', true);
+                return false;
+            }
+        }
+
         // 更新状态显示
         function updateStatus(status) {
-            progressBar.style.width = `${status.progress}%`;
-            progressPercent.textContent = `${status.progress}%`;
+            progressBar.style.width = `${status.progress || 0}%`;
+            progressPercent.textContent = `${status.progress || 0}%`;
             totalUsers.textContent = status.total || 0;
             transferredUsers.textContent = status.transferred || 0;
             skippedUsers.textContent = status.skipped || 0;
@@ -137,88 +201,134 @@
                 transferStatus.className = 'text-xl font-semibold text-primary';
                 startBtn.disabled = true;
             } else {
-                transferStatus.textContent = status.progress === 100 ? '已完成' : '未开始';
-                transferStatus.className = status.progress === 100 
-                    ? 'text-xl font-semibold text-success' 
-                    : 'text-xl font-semibold text-gray-600';
+                if (status.progress === 100) {
+                    transferStatus.textContent = '已完成';
+                    transferStatus.className = 'text-xl font-semibold text-success';
+                } else {
+                    transferStatus.textContent = '未开始';
+                    transferStatus.className = 'text-xl font-semibold text-gray-600';
+                }
                 startBtn.disabled = false;
             }
         }
 
-        // 获取当前状态（带预检请求处理）
-        async function getStatus() {
+        // 处理CORS预检请求
+        async function handlePreflight(url) {
             try {
-                // 先发送OPTIONS预检请求（确保CORS通过）
-                await fetch(`${API_BASE_URL}/status`, { method: 'OPTIONS' });
-                
-                // 再发送实际GET请求
-                const response = await fetch(`${API_BASE_URL}/status`, {
-                    method: 'GET',
+                const response = await fetch(url, {
+                    method: 'OPTIONS',
                     mode: 'cors',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: {
+                        'Access-Control-Request-Method': 'GET, POST',
+                        'Access-Control-Request-Headers': 'Content-Type',
+                        'Origin': window.location.origin
+                    }
                 });
-                
-                if (!response.ok) {
-                    addLog(`服务器错误 (${response.status}): ${await response.text()}`);
+                return response.ok;
+            } catch (error) {
+                addLog(`预检请求失败: ${error.message}`, true);
+                return false;
+            }
+        }
+
+        // 获取当前状态
+        async function getStatus() {
+            if (!validateWorkerUrl()) return;
+            
+            const apiUrl = `${getApiBaseUrl()}/status`;
+            
+            try {
+                // 执行预检请求
+                const preflightOk = await handlePreflight(apiUrl);
+                if (!preflightOk) {
+                    addLog('CORS预检失败，无法获取状态', true);
                     return;
                 }
                 
+                // 发送实际请求
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const responseText = await response.text();
+                
+                if (!response.ok) {
+                    addLog(`获取状态失败 (${response.status}): ${responseText}`, true);
+                    return;
+                }
+                
+                // 解析响应
                 try {
-                    const status = await response.json();
+                    const status = JSON.parse(responseText);
                     updateStatus(status);
                     return status;
                 } catch (e) {
-                    addLog(`服务器返回非JSON数据: ${await response.text()}`);
+                    addLog(`服务器返回非JSON格式: ${responseText}`, true);
                 }
             } catch (error) {
-                addLog(`获取状态失败: ${error.message}`);
-                // 详细错误分析
+                addLog(`获取状态时发生错误: ${error.message}`, true);
                 if (error.message.includes('CORS')) {
-                    addLog('CORS错误：请检查Worker的ALLOWED_ORIGIN配置');
+                    addLog('提示：请检查Worker的CORS配置是否包含当前域名', true);
                 } else if (error.message.includes('404')) {
-                    addLog('404错误：Worker地址不正确，请检查URL');
+                    addLog('提示：Worker地址不正确或未部署', true);
                 }
             }
         }
 
-        // 开始转移（带预检请求处理）
+        // 开始转移
         async function startTransfer() {
+            if (!validateWorkerUrl()) return;
+            
             const sourceGroup = sourceGroupInput.value.trim();
             const targetGroup = targetGroupInput.value.trim();
 
             if (!sourceGroup || !targetGroup) {
-                addLog('错误：请输入源群组和目标群组ID');
+                addLog('错误：请输入源群组和目标群组ID', true);
                 return;
             }
 
+            const apiUrl = `${getApiBaseUrl()}/transfer`;
+            
             try {
-                // 先发送OPTIONS预检请求
-                await fetch(`${API_BASE_URL}/transfer`, { method: 'OPTIONS' });
+                // 执行预检请求
+                const preflightOk = await handlePreflight(apiUrl);
+                if (!preflightOk) {
+                    addLog('CORS预检失败，无法开始转移', true);
+                    return;
+                }
                 
-                // 再发送实际POST请求（FormData格式）
+                // 准备FormData
                 const formData = new FormData();
                 formData.append('source', sourceGroup);
                 formData.append('target', targetGroup);
 
-                const response = await fetch(`${API_BASE_URL}/transfer`, {
+                // 发送请求
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     mode: 'cors',
                     body: formData
                 });
 
+                const responseText = await response.text();
+                
                 if (!response.ok) {
-                    addLog(`转移请求失败 (${response.status}): ${await response.text()}`);
+                    addLog(`转移请求失败 (${response.status}): ${responseText}`, true);
                     return;
                 }
 
-                addLog('开始转移用户...');
+                addLog('转移请求已发送，开始处理...');
                 startStatusPolling();
             } catch (error) {
-                addLog(`开始转移失败: ${error.message}`);
+                addLog(`开始转移时发生错误: ${error.message}`, true);
                 if (error.message.includes('CORS')) {
-                    addLog('CORS错误：请检查Worker的CORS配置');
+                    addLog('提示：Worker的CORS配置可能不正确', true);
                 } else if (error.message.includes('404')) {
-                    addLog('404错误：Worker地址不正确');
+                    addLog('提示：Worker地址错误或接口不存在', true);
                 }
             }
         }
@@ -226,21 +336,33 @@
         // 开始轮询状态
         function startStatusPolling() {
             if (statusPollInterval) clearInterval(statusPollInterval);
-            getStatus();
-            statusPollInterval = setInterval(getStatus, 3000);
+            getStatus(); // 立即获取一次
+            statusPollInterval = setInterval(async () => {
+                const status = await getStatus();
+                // 如果转移完成，停止轮询
+                if (status && !status.in_progress && status.progress === 100) {
+                    clearInterval(statusPollInterval);
+                    statusPollInterval = null;
+                    addLog('转移已完成！');
+                }
+            }, 3000);
         }
 
         // 事件监听
         startBtn.addEventListener('click', startTransfer);
+        workerApiInput.addEventListener('change', () => {
+            addLog('Worker地址已更新，点击"开始转移"重新尝试');
+        });
 
-        // 页面加载时执行
+        // 页面加载时初始化
         window.addEventListener('load', () => {
             addLog('页面已加载，准备就绪');
-            // 检查Worker地址是否正确配置
-            if (API_BASE_URL.includes('your-account-subdomain')) {
-                addLog('警告：请替换API_BASE_URL为您的实际Worker地址');
+            // 检查默认地址
+            if (getApiBaseUrl().includes('your-account-subdomain')) {
+                addLog('警告：请替换默认的Worker API地址为您的实际地址', true);
+            } else {
+                getStatus(); // 自动获取一次状态
             }
-            getStatus();
         });
     </script>
 </body>
