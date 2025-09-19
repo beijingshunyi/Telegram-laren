@@ -125,12 +125,36 @@
         .status-stopped {
             background-color: #ff3b30;
         }
+        .error-message {
+            color: #ff3b30;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #ffebee;
+            border-radius: 8px;
+            display: none;
+        }
+        .api-config {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e5ea;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>Telegram 群组用户转移控制台</h1>
+        </div>
+
+        <!-- API配置 -->
+        <div class="card">
+            <h2>API配置</h2>
+            <div class="form-group">
+                <label for="apiUrl">API基础地址</label>
+                <input type="text" id="apiUrl" value="https://telegram-laren.bingkuijing.workers.dev" placeholder="例如：https://your-worker.your-subdomain.workers.dev">
+            </div>
+            <button onclick="saveApiConfig()">保存API配置</button>
+            <div id="apiError" class="error-message"></div>
         </div>
 
         <!-- 群组配置 -->
@@ -145,6 +169,7 @@
                 <input type="text" id="targetChat" placeholder="例如：-1001234567890">
             </div>
             <button onclick="saveConfig()">保存配置</button>
+            <div id="configError" class="error-message"></div>
         </div>
 
         <!-- 当前配置 -->
@@ -159,6 +184,7 @@
                 <button onclick="startTransfer()">开始转移</button>
                 <button onclick="stopTransfer()">停止转移</button>
             </div>
+            <div id="transferError" class="error-message"></div>
         </div>
 
         <!-- 操作日志 -->
@@ -167,159 +193,256 @@
             <div class="logs" id="logsList">
                 <!-- 日志将动态加载 -->
             </div>
+            <div id="logsError" class="error-message"></div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script>
-        // 初始化Supabase
-        const SUPABASE_URL = 'https://telegram-laren.bingkuijing.workers.dev';
+        // 全局变量
+        let supabase = null;
+        let SUPABASE_URL = 'https://telegram-laren.bingkuijing.workers.dev';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10bmR4ZnF4aXZnaXZid2FtamduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyNDc1MDQsImV4cCI6MjA3MzgyMzUwNH0.s7LQxin9OyNLUTQsrv0EK1z60CcmqhyGAjDY-A17Yy0';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // 初始化Supabase
+        function initSupabase() {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                hideError('apiError');
+                return true;
+            } catch (error) {
+                showError('apiError', '初始化Supabase失败: ' + error.message);
+                return false;
+            }
+        }
+
+        // 显示错误信息
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        // 隐藏错误信息
+        function hideError(elementId) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.style.display = 'none';
+        }
+
+        // 保存API配置
+        function saveApiConfig() {
+            SUPABASE_URL = document.getElementById('apiUrl').value.trim();
+            if (!SUPABASE_URL) {
+                showError('apiError', '请输入API基础地址');
+                return;
+            }
+            
+            // 保存到localStorage
+            localStorage.setItem('apiUrl', SUPABASE_URL);
+            
+            // 重新初始化Supabase
+            if (initSupabase()) {
+                alert('API配置保存成功');
+                // 重新加载配置和日志
+                loadConfig();
+                loadLogs();
+            }
+        }
 
         // 保存配置
         async function saveConfig() {
+            if (!supabase && !initSupabase()) {
+                return;
+            }
+
             const sourceChats = document.getElementById('sourceChat').value.split(',').map(id => id.trim()).filter(id => id);
             const targetChat = document.getElementById('targetChat').value.trim();
 
             if (!targetChat) {
-                alert('请输入目标群组ID');
+                showError('configError', '请输入目标群组ID');
                 return;
             }
 
-            // 检查配置表是否存在记录，不存在则插入，存在则更新
-            const { data, error } = await supabase
-                .from('config')
-                .select('id')
-                .single();
-
-            if (error && error.code !== 'PGRST116') { // PGRST116表示没有找到记录
-                console.error('Error checking config:', error);
-                return;
-            }
-
-            if (data) {
-                // 更新
-                const { error: updateError } = await supabase
+            try {
+                // 检查配置表是否存在记录，不存在则插入，存在则更新
+                const { data, error } = await supabase
                     .from('config')
-                    .update({ 
-                        source_chats: sourceChats, 
-                        target_chat: targetChat,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', data.id);
-                if (updateError) {
-                    console.error('Error updating config:', updateError);
-                } else {
-                    alert('配置更新成功');
-                    loadConfig();
+                    .select('id')
+                    .single();
+
+                if (error && error.code !== 'PGRST116') { // PGRST116表示没有找到记录
+                    throw error;
                 }
-            } else {
-                // 插入
-                const { error: insertError } = await supabase
-                    .from('config')
-                    .insert([{ 
-                        source_chats: sourceChats, 
-                        target_chat: targetChat,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    }]);
-                if (insertError) {
-                    console.error('Error inserting config:', insertError);
+
+                if (data) {
+                    // 更新
+                    const { error: updateError } = await supabase
+                        .from('config')
+                        .update({ 
+                            source_chats: sourceChats, 
+                            target_chat: targetChat,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', data.id);
+                    if (updateError) throw updateError;
                 } else {
-                    alert('配置保存成功');
-                    loadConfig();
+                    // 插入
+                    const { error: insertError } = await supabase
+                        .from('config')
+                        .insert([{ 
+                            source_chats: sourceChats, 
+                            target_chat: targetChat,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        }]);
+                    if (insertError) throw insertError;
                 }
+                
+                hideError('configError');
+                alert('配置更新成功');
+                loadConfig();
+            } catch (error) {
+                console.error('Error saving config:', error);
+                showError('configError', '保存配置失败: ' + error.message);
             }
         }
 
         // 加载配置
         async function loadConfig() {
-            const { data, error } = await supabase
-                .from('config')
-                .select('*')
-                .single();
-
-            if (error && error.code !== 'PGRST116') {
-                console.error('Error loading config:', error);
+            if (!supabase && !initSupabase()) {
                 return;
             }
 
-            if (data) {
-                document.getElementById('sourceChat').value = data.source_chats.join(',');
-                document.getElementById('targetChat').value = data.target_chat;
-                document.getElementById('currentSource').textContent = data.source_chats.join(', ');
-                document.getElementById('currentTarget').textContent = data.target_chat;
-                
-                // 检查运行状态
-                const runningStatus = document.getElementById('runningStatus');
-                if (data.is_running) {
-                    runningStatus.innerHTML = '<span class="status-indicator status-running"></span>运行中';
-                } else {
-                    runningStatus.innerHTML = '<span class="status-indicator status-stopped"></span>已停止';
+            try {
+                const { data, error } = await supabase
+                    .from('config')
+                    .select('*')
+                    .single();
+
+                if (error && error.code !== 'PGRST116') {
+                    throw error;
                 }
+
+                if (data) {
+                    document.getElementById('sourceChat').value = data.source_chats.join(',');
+                    document.getElementById('targetChat').value = data.target_chat;
+                    document.getElementById('currentSource').textContent = data.source_chats.join(', ');
+                    document.getElementById('currentTarget').textContent = data.target_chat;
+                    
+                    // 检查运行状态
+                    const runningStatus = document.getElementById('runningStatus');
+                    if (data.is_running) {
+                        runningStatus.innerHTML = '<span class="status-indicator status-running"></span>运行中';
+                    } else {
+                        runningStatus.innerHTML = '<span class="status-indicator status-stopped"></span>已停止';
+                    }
+                }
+                hideError('configError');
+            } catch (error) {
+                console.error('Error loading config:', error);
+                showError('configError', '加载配置失败: ' + error.message);
             }
         }
 
         // 开始转移
         async function startTransfer() {
-            const { error } = await supabase
-                .from('config')
-                .update({ is_running: true })
-                .eq('id', 1);
-            
-            if (error) {
-                console.error('Error starting transfer:', error);
-            } else {
+            if (!supabase && !initSupabase()) {
+                return;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from('config')
+                    .update({ is_running: true })
+                    .eq('id', 1);
+                
+                if (error) throw error;
+                
+                hideError('transferError');
                 alert('转移任务已启动');
                 loadConfig();
+            } catch (error) {
+                console.error('Error starting transfer:', error);
+                showError('transferError', '启动转移失败: ' + error.message);
             }
         }
 
         // 停止转移
         async function stopTransfer() {
-            const { error } = await supabase
-                .from('config')
-                .update({ is_running: false })
-                .eq('id', 1);
-            
-            if (error) {
-                console.error('Error stopping transfer:', error);
-            } else {
+            if (!supabase && !initSupabase()) {
+                return;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from('config')
+                    .update({ is_running: false })
+                    .eq('id', 1);
+                
+                if (error) throw error;
+                
+                hideError('transferError');
                 alert('转移任务已停止');
                 loadConfig();
+            } catch (error) {
+                console.error('Error stopping transfer:', error);
+                showError('transferError', '停止转移失败: ' + error.message);
             }
         }
 
         // 加载日志
         async function loadLogs() {
-            const { data, error } = await supabase
-                .from('logs')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(50);
-
-            if (error) {
-                console.error('Error loading logs:', error);
+            if (!supabase && !initSupabase()) {
                 return;
             }
 
-            const logsList = document.getElementById('logsList');
-            logsList.innerHTML = '';
+            try {
+                const { data, error } = await supabase
+                    .from('logs')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(50);
 
-            data.forEach(log => {
-                const logItem = document.createElement('div');
-                logItem.className = `log-item ${log.action}`;
-                const time = new Date(log.created_at).toLocaleString();
-                logItem.textContent = `[${time}] ${log.username} (${log.user_id}) - ${log.chat_name} - ${log.action}: ${log.message}`;
-                logsList.appendChild(logItem);
-            });
+                if (error) throw error;
+
+                const logsList = document.getElementById('logsList');
+                logsList.innerHTML = '';
+
+                if (data && data.length > 0) {
+                    data.forEach(log => {
+                        const logItem = document.createElement('div');
+                        logItem.className = `log-item ${log.action}`;
+                        const time = new Date(log.created_at).toLocaleString();
+                        logItem.textContent = `[${time}] ${log.username || '未知用户'} (${log.user_id}) - ${log.chat_name} - ${log.action}: ${log.message}`;
+                        logsList.appendChild(logItem);
+                    });
+                } else {
+                    logsList.innerHTML = '<div class="log-item">暂无日志记录</div>';
+                }
+                
+                hideError('logsError');
+            } catch (error) {
+                console.error('Error loading logs:', error);
+                showError('logsError', '加载日志失败: ' + error.message);
+            }
         }
 
         // 页面加载时初始化
         window.onload = function() {
+            // 从localStorage加载API配置
+            const savedApiUrl = localStorage.getItem('apiUrl');
+            if (savedApiUrl) {
+                SUPABASE_URL = savedApiUrl;
+                document.getElementById('apiUrl').value = savedApiUrl;
+            }
+            
+            // 初始化Supabase
+            initSupabase();
+            
+            // 加载配置和日志
             loadConfig();
             loadLogs();
+            
             // 每10秒刷新一次日志和状态
             setInterval(() => {
                 loadLogs();
