@@ -42,7 +42,7 @@
     <div class="container mx-auto px-4 py-8 max-w-4xl">
         <header class="text-center mb-10">
             <h1 class="text-[clamp(1.8rem,5vw,2.5rem)] font-bold text-dark mb-2">
-                <i class="fa fa-telegram text-primary mr-3"></i>Telegram万花楼群组用户转移工具
+                <i class="fa fa-telegram text-primary mr-3"></i>Telegram群组用户转移工具
             </h1>
             <p class="text-secondary text-lg">轻松将成员从一个群组转移到另一个群组</p>
         </header>
@@ -147,7 +147,6 @@
     </div>
 
     <script>
-        // 修复：使用正确的Worker地址，确保末尾没有斜杠
         const API_BASE_URL = 'https://telegram-laren.bingkuijing.workers.dev';
         let statusPollInterval = null;
 
@@ -202,25 +201,30 @@
         // 获取当前状态 - 增强错误处理
         async function getStatus() {
             try {
-                // 修复：正确拼接URL，避免双斜杠
                 const response = await fetch(`${API_BASE_URL}/status`);
+                const statusText = await response.text(); // 先以文本形式获取
                 
-                // 先检查HTTP状态码
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    addLog(`服务器错误 (${response.status}): ${errorText}`);
+                    addLog(`服务器错误 (${response.status}): ${statusText}`);
+                    // 尝试解析可能的错误信息
+                    try {
+                        const error = JSON.parse(statusText);
+                        if (error.error === "1003") {
+                            addLog("提示：请检查Cloudflare Worker配置和安全规则");
+                        }
+                    } catch (e) {
+                        // 不是JSON格式的错误
+                    }
                     return;
                 }
                 
-                // 尝试解析JSON，失败时捕获错误
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    const status = await response.json();
+                // 尝试解析JSON
+                try {
+                    const status = JSON.parse(statusText);
                     updateStatus(status);
                     return status;
-                } else {
-                    const text = await response.text();
-                    addLog(`服务器返回非JSON数据: ${text}`);
+                } catch (e) {
+                    addLog(`服务器返回无效JSON: ${statusText}`);
                 }
             } catch (error) {
                 addLog(`错误：无法获取状态 - ${error.message}`);
@@ -250,22 +254,25 @@
                     })
                 });
 
-                // 检查HTTP状态码
+                const responseText = await response.text();
+                
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    addLog(`转移请求失败 (${response.status}): ${errorText}`);
+                    addLog(`转移请求失败 (${response.status}): ${responseText}`);
+                    // 检查是否是1003错误
+                    if (responseText.includes("1003")) {
+                        addLog("可能原因：Cloudflare Worker安全规则阻止了请求");
+                        addLog("解决方案：检查Worker配置中的CORS和请求处理逻辑");
+                    }
                     return;
                 }
 
                 // 处理响应
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    const result = await response.json();
+                try {
+                    const result = JSON.parse(responseText);
                     addLog('开始转移用户...');
                     startStatusPolling();
-                } else {
-                    const text = await response.text();
-                    addLog(`转移响应: ${text}`);
+                } catch (e) {
+                    addLog(`转移响应: ${responseText}`);
                     startStatusPolling();
                 }
             } catch (error) {
@@ -277,7 +284,7 @@
         // 开始轮询状态
         function startStatusPolling() {
             if (statusPollInterval) clearInterval(statusPollInterval);
-            getStatus(); // 立即获取一次
+            getStatus(); 
             statusPollInterval = setInterval(async () => {
                 const status = await getStatus();
                 if (status && !status.in_progress && status.progress === 100) {
@@ -285,7 +292,7 @@
                     clearInterval(statusPollInterval);
                     statusPollInterval = null;
                 }
-            }, 3000); // 每3秒查询一次
+            }, 3000);
         }
 
         // 事件监听
