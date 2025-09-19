@@ -42,7 +42,7 @@
     <div class="container mx-auto px-4 py-8 max-w-4xl">
         <header class="text-center mb-10">
             <h1 class="text-[clamp(1.8rem,5vw,2.5rem)] font-bold text-dark mb-2">
-                <i class="fa fa-telegram text-primary mr-3"></i>Telegram群组用户转移工具
+                <i class="fa fa-telegram text-primary mr-3"></i>Telegram万花楼群组用户转移工具
             </h1>
             <p class="text-secondary text-lg">轻松将成员从一个群组转移到另一个群组</p>
         </header>
@@ -147,9 +147,8 @@
     </div>
 
     <script>
-        // 关键修改：使用Cloudflare Worker的HTTPS地址
-        // 请将下面的地址替换为您实际的Cloudflare Worker地址
-        const API_BASE_URL = 'https://telegram-laren.bingkuijing.workers.dev/';
+        // 修复：使用正确的Worker地址，确保末尾没有斜杠
+        const API_BASE_URL = 'https://telegram-laren.bingkuijing.workers.dev';
         let statusPollInterval = null;
 
         // DOM元素
@@ -200,20 +199,36 @@
             }
         }
 
-        // 获取当前状态
+        // 获取当前状态 - 增强错误处理
         async function getStatus() {
             try {
+                // 修复：正确拼接URL，避免双斜杠
                 const response = await fetch(`${API_BASE_URL}/status`);
-                const status = await response.json();
-                updateStatus(status);
-                return status;
+                
+                // 先检查HTTP状态码
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    addLog(`服务器错误 (${response.status}): ${errorText}`);
+                    return;
+                }
+                
+                // 尝试解析JSON，失败时捕获错误
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const status = await response.json();
+                    updateStatus(status);
+                    return status;
+                } else {
+                    const text = await response.text();
+                    addLog(`服务器返回非JSON数据: ${text}`);
+                }
             } catch (error) {
                 addLog(`错误：无法获取状态 - ${error.message}`);
                 console.error('Status error:', error);
             }
         }
 
-        // 开始转移
+        // 开始转移 - 增强错误处理
         async function startTransfer() {
             const sourceGroup = sourceGroupInput.value.trim();
             const targetGroup = targetGroupInput.value.trim();
@@ -235,13 +250,23 @@
                     })
                 });
 
-                const result = await response.json();
-                
-                if (response.ok) {
+                // 检查HTTP状态码
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    addLog(`转移请求失败 (${response.status}): ${errorText}`);
+                    return;
+                }
+
+                // 处理响应
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const result = await response.json();
                     addLog('开始转移用户...');
                     startStatusPolling();
                 } else {
-                    addLog(`错误：${result.error || '无法开始转移'}`);
+                    const text = await response.text();
+                    addLog(`转移响应: ${text}`);
+                    startStatusPolling();
                 }
             } catch (error) {
                 addLog(`错误：开始转移失败 - ${error.message}`);
