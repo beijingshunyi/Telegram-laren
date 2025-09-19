@@ -3,345 +3,680 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram 群组用户转移工具</title>
-    <!-- 引入Tailwind CSS实现快速样式设计 -->
+    <title>Telegram 群组管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入Font Awesome图标 -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <style>
-        /* 进度条动画 */
-        @keyframes progressMove {
-            from { width: 0; }
-            to { width: var(--progress-width); }
+    <script>
+        // 配置Tailwind自定义颜色（iOS风格）
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ios-blue': '#007AFF',
+                        'ios-gray': '#F5F5F7',
+                        'ios-dark-gray': '#8E8E93',
+                        'ios-light-gray': '#E5E5EA',
+                        'ios-red': '#FF3B30',
+                        'ios-green': '#34C759',
+                        'ios-yellow': '#FFCC00'
+                    },
+                    fontFamily: {
+                        ios: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'ios': '0 1px 3px rgba(0, 0, 0, 0.1)',
+                        'ios-button': '0 2px 4px rgba(0, 122, 255, 0.3)'
+                    }
+                }
+            }
         }
-        .progress-bar {
-            transition: width 0.5s ease;
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .ios-card {
+                @apply bg-white rounded-xl shadow-ios overflow-hidden transition-all duration-200;
+            }
+            .ios-button {
+                @apply bg-ios-blue text-white rounded-full py-3 px-4 font-medium shadow-ios-button hover:bg-opacity-90 active:scale-95 transition-all duration-200;
+            }
+            .ios-input {
+                @apply border border-ios-light-gray rounded-lg px-3 py-3 w-full focus:outline-none focus:ring-2 focus:ring-ios-blue/50 transition-all;
+            }
+            .ios-tab {
+                @apply flex-1 text-center py-4 text-ios-dark-gray hover:text-ios-blue transition-colors;
+            }
+            .ios-tab-active {
+                @apply text-ios-blue font-medium relative;
+            }
+            .ios-tab-active::after {
+                content: '';
+                @apply absolute bottom-0 left-0 w-full h-0.5 bg-ios-blue;
+            }
+            .nav-shadow {
+                box-shadow: 0 -0.5px 0 rgba(0, 0, 0, 0.1);
+            }
+            .pulse-animation {
+                animation: pulse 2s infinite;
+            }
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen p-4 md:p-8">
-    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
-        <!-- 头部标题 -->
-        <div class="bg-blue-600 text-white p-6">
-            <h1 class="text-2xl md:text-3xl font-bold flex items-center">
-                <i class="fa fa-exchange mr-3"></i>Telegram 群组用户转移工具
-            </h1>
-            <p class="mt-2 opacity-90">将源群组用户批量转移至目标群组（支持实时进度监控）</p>
+<body class="font-ios bg-ios-gray min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white py-5 px-6 shadow-sm sticky top-0 z-50">
+        <h1 class="text-xl font-bold text-gray-900 text-center">Telegram 群组管理</h1>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-6 pb-24">
+        <!-- 标签页导航 -->
+        <div class="flex bg-white rounded-xl shadow-ios mb-6">
+            <div class="ios-tab ios-tab-active" data-tab="dashboard">
+                <i class="fa fa-tachometer mr-1"></i> 仪表盘
+            </div>
+            <div class="ios-tab" data-tab="groups">
+                <i class="fa fa-users mr-1"></i> 群组管理
+            </div>
+            <div class="ios-tab" data-tab="logs">
+                <i class="fa fa-history mr-1"></i> 操作日志
+            </div>
         </div>
 
-        <!-- 配置区域 -->
-        <div class="p-6 border-b border-gray-100">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                <i class="fa fa-cog text-blue-600 mr-2"></i>基本配置
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- 服务器地址 -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">服务器地址</label>
-                    <input 
-                        type="text" 
-                        id="serverUrl" 
-                        placeholder="http://EC2公网IP:8002" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value="http://3.26.45.31:8002"  <!-- 替换为你的EC2公网IP+端口 -->
-                    >
+        <!-- 仪表盘标签页 -->
+        <div id="dashboard-tab" class="tab-content">
+            <div class="ios-card p-6 mb-6">
+                <h2 class="text-lg font-semibold mb-4">当前配置</h2>
+                
+                <div class="mb-4">
+                    <h3 class="text-sm text-ios-dark-gray mb-2">源群组</h3>
+                    <div id="source-groups" class="flex flex-wrap gap-2">
+                        <div class="bg-ios-gray px-3 py-1 rounded-full text-sm">加载中...</div>
+                    </div>
                 </div>
-                <!-- 源群组ID -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">源群组ID</label>
-                    <input 
-                        type="text" 
-                        id="sourceGroup" 
-                        placeholder="如: -2651659549" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
+                
+                <div class="mb-6">
+                    <h3 class="text-sm text-ios-dark-gray mb-2">目标群组</h3>
+                    <div id="target-groups" class="flex flex-wrap gap-2">
+                        <div class="bg-ios-gray px-3 py-1 rounded-full text-sm">加载中...</div>
+                    </div>
                 </div>
-                <!-- 目标群组ID -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">目标群组ID</label>
-                    <input 
-                        type="text" 
-                        id="targetGroup" 
-                        placeholder="如: -1002735235059" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
+                
+                <button id="start-transfer" class="ios-button w-full">
+                    <i class="fa fa-play mr-1"></i> 开始转移用户
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="ios-card p-4 text-center">
+                    <div class="text-ios-dark-gray text-sm mb-1">总转移用户</div>
+                    <div id="total-transferred" class="text-2xl font-bold">0</div>
                 </div>
-                <!-- Bot Token (可选，前端仅展示，实际在后端配置) -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Bot Token（后端已配置）</label>
-                    <input 
-                        type="text" 
-                        placeholder="已在后端配置，此处无需填写" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 cursor-not-allowed"
-                        disabled
-                    >
+                <div class="ios-card p-4 text-center">
+                    <div class="text-ios-dark-gray text-sm mb-1">活跃群组</div>
+                    <div id="active-groups" class="text-2xl font-bold">0</div>
+                </div>
+            </div>
+            
+            <div class="ios-card p-6">
+                <h2 class="text-lg font-semibold mb-4">最近操作</h2>
+                <div id="recent-logs" class="space-y-3 max-h-64 overflow-y-auto">
+                    <div class="text-center text-ios-dark-gray py-6">加载最近日志...</div>
                 </div>
             </div>
         </div>
 
-        <!-- 操作按钮区域 -->
-        <div class="p-6 border-b border-gray-100 flex flex-wrap gap-3">
-            <button 
-                id="startBtn" 
-                class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition flex items-center"
-            >
-                <i class="fa fa-play mr-2"></i>开始转移用户
-            </button>
-            <button 
-                id="stopBtn" 
-                class="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition flex items-center"
-                disabled
-            >
-                <i class="fa fa-stop mr-2"></i>停止转移
-            </button>
-            <button 
-                id="resetBtn" 
-                class="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition flex items-center"
-            >
-                <i class="fa fa-refresh mr-2"></i>重置状态
-            </button>
-        </div>
-
-        <!-- 状态展示区域 -->
-        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- 进度条和核心状态 -->
-            <div>
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <i class="fa fa-tachometer text-blue-600 mr-2"></i>转移进度
-                </h2>
-                <!-- 进度条容器 -->
-                <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
-                    <div id="progressBar" class="progress-bar bg-green-500 h-4 rounded-full" style="width: 0%"></div>
-                </div>
-                <!-- 进度百分比 -->
-                <div class="text-right text-sm text-gray-600 mb-6">
-                    当前进度: <span id="progressText" class="font-bold text-green-600">0%</span>
-                </div>
-
-                <!-- 状态卡片 -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <p class="text-sm text-gray-600 mb-1">总用户数</p>
-                        <p id="totalUsers" class="text-2xl font-bold text-blue-600">0</p>
+        <!-- 群组管理标签页 -->
+        <div id="groups-tab" class="tab-content hidden">
+            <div class="ios-card p-6 mb-6">
+                <h2 class="text-lg font-semibold mb-4">添加新群组</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-ios-dark-gray mb-1">群组ID</label>
+                        <input type="text" id="new-group-id" class="ios-input" placeholder="例如: -1001234567890">
                     </div>
-                    <div class="bg-green-50 p-4 rounded-lg border border-green-100">
-                        <p class="text-sm text-gray-600 mb-1">已转移</p>
-                        <p id="transferredUsers" class="text-2xl font-bold text-green-600">0</p>
+                    <div>
+                        <label class="block text-sm text-ios-dark-gray mb-1">群组名称</label>
+                        <input type="text" id="new-group-name" class="ios-input" placeholder="输入群组名称">
                     </div>
-                    <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
-                        <p class="text-sm text-gray-600 mb-1">已跳过</p>
-                        <p id="skippedUsers" class="text-2xl font-bold text-yellow-600">0</p>
+                    <div class="flex gap-2">
+                        <label class="flex items-center flex-1 p-3 border border-ios-light-gray rounded-lg cursor-pointer hover:bg-ios-gray transition-colors">
+                            <input type="checkbox" id="is-source" class="mr-2">
+                            <span>作为源群组</span>
+                        </label>
+                        <label class="flex items-center flex-1 p-3 border border-ios-light-gray rounded-lg cursor-pointer hover:bg-ios-gray transition-colors">
+                            <input type="checkbox" id="is-target" class="mr-2">
+                            <span>作为目标群组</span>
+                        </label>
                     </div>
-                    <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                        <p class="text-sm text-gray-600 mb-1">转移状态</p>
-                        <p id="transferStatus" class="text-2xl font-bold text-purple-600">未开始</p>
-                    </div>
+                    <button id="add-group" class="ios-button w-full">
+                        <i class="fa fa-plus mr-1"></i> 添加群组
+                    </button>
                 </div>
             </div>
-
-            <!-- 操作日志 -->
-            <div>
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <i class="fa fa-history text-blue-600 mr-2"></i>操作日志
-                </h2>
-                <div id="logContainer" class="w-full h-64 bg-gray-50 border border-gray-200 rounded-md p-3 overflow-y-auto text-sm">
-                    <div class="text-gray-500">等待转移开始...</div>
+            
+            <div class="ios-card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">已添加群组</h2>
+                    <span id="groups-count" class="bg-ios-gray px-2 py-1 rounded text-sm">0 个群组</span>
+                </div>
+                
+                <div id="groups-list" class="space-y-3 max-h-[500px] overflow-y-auto">
+                    <div class="text-center text-ios-dark-gray py-6">加载群组列表...</div>
                 </div>
             </div>
         </div>
 
-        <!-- 底部说明 -->
-        <div class="p-6 bg-gray-50 border-t border-gray-100">
-            <h3 class="font-semibold text-gray-800 mb-2">注意事项：</h3>
-            <ul class="text-sm text-gray-600 list-disc pl-5 space-y-1">
-                <li>确保后端Bot已加入源群组和目标群组，并拥有管理员权限（开启"添加成员"权限）</li>
-                <li>群组ID格式为负数（如：-1001234567890），可通过 @getidsbot 获取</li>
-                <li>转移过程中请勿关闭页面，否则将无法实时监控进度</li>
-                <li>已跳过用户包括：Bot账户、拒绝被添加的用户、已在目标群组的用户</li>
-            </ul>
+        <!-- 日志标签页 -->
+        <div id="logs-tab" class="tab-content hidden">
+            <div class="ios-card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">操作日志</h2>
+                    <div class="flex gap-2">
+                        <button id="refresh-logs" class="bg-ios-gray px-3 py-1 rounded-full text-sm hover:bg-opacity-80 transition-colors">
+                            <i class="fa fa-refresh mr-1"></i> 刷新
+                        </button>
+                        <button id="clear-logs" class="bg-ios-red text-white px-3 py-1 rounded-full text-sm hover:bg-opacity-90 transition-colors">
+                            <i class="fa fa-trash mr-1"></i> 清空
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="relative">
+                    <input type="text" id="log-search" class="ios-input mb-4" placeholder="搜索用户名或群组...">
+                    <i class="fa fa-search absolute right-4 top-2 text-ios-dark-gray"></i>
+                </div>
+                
+                <div id="logs-list" class="space-y-3 max-h-[500px] overflow-y-auto">
+                    <div class="text-center text-ios-dark-gray py-6">加载日志...</div>
+                </div>
+            </div>
         </div>
+    </main>
+
+    <!-- 底部导航 -->
+    <footer class="bg-white py-3 nav-shadow fixed bottom-0 left-0 right-0 z-40">
+        <div class="container mx-auto px-4">
+            <div class="text-center text-xs text-ios-dark-gray">
+                Telegram 群组管理系统 © 2023
+            </div>
+        </div>
+    </footer>
+
+    <!-- 成功提示框 -->
+    <div id="success-toast" class="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-ios-green text-white px-4 py-2 rounded-full shadow-lg hidden">
+        操作成功
+    </div>
+
+    <!-- 错误提示框 -->
+    <div id="error-toast" class="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-ios-red text-white px-4 py-2 rounded-full shadow-lg hidden">
+        操作失败
+    </div>
+
+    <!-- 加载提示框 -->
+    <div id="loading-toast" class="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg hidden flex items-center">
+        <i class="fa fa-circle-o-notch fa-spin mr-2"></i> 处理中...
     </div>
 
     <script>
-        // 页面元素获取
-        const serverUrlInput = document.getElementById('serverUrl');
-        const sourceGroupInput = document.getElementById('sourceGroup');
-        const targetGroupInput = document.getElementById('targetGroup');
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const progressBar = document.getElementById('progressBar');
-        const progressText = document.getElementById('progressText');
-        const totalUsersEl = document.getElementById('totalUsers');
-        const transferredUsersEl = document.getElementById('transferredUsers');
-        const skippedUsersEl = document.getElementById('skippedUsers');
-        const transferStatusEl = document.getElementById('transferStatus');
-        const logContainer = document.getElementById('logContainer');
-
-        // 全局变量
-        let statusPolling = null; // 状态轮询定时器
-        let isTransferring = false; // 是否正在转移
-
-        // 日志添加函数
-        function addLog(message, isError = false) {
-            const logItem = document.createElement('div');
-            logItem.className = `mb-1 ${isError ? 'text-red-600' : 'text-gray-800'}`;
-            logItem.innerHTML = `<span class="text-gray-500">[${new Date().toLocaleTimeString()}]</span> ${message}`;
-            logContainer.appendChild(logItem);
-            // 滚动到底部
-            logContainer.scrollTop = logContainer.scrollHeight;
-        }
-
-        // 重置所有状态
-        function resetAllStatus() {
-            // 清除定时器
-            if (statusPolling) {
-                clearInterval(statusPolling);
-                statusPolling = null;
-            }
-            // 重置UI
-            progressBar.style.width = '0%';
-            progressText.textContent = '0%';
-            totalUsersEl.textContent = '0';
-            transferredUsersEl.textContent = '0';
-            skippedUsersEl.textContent = '0';
-            transferStatusEl.textContent = '未开始';
-            transferStatusEl.className = 'text-2xl font-bold text-purple-600';
-            // 重置按钮状态
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            // 重置变量
-            isTransferring = false;
-            // 添加日志
-            addLog('状态已重置');
-        }
-
-        // 更新状态显示
-        function updateStatus(statusData) {
-            const { progress, total, transferred, skipped, in_progress, error } = statusData;
-            
-            // 处理错误
-            if (error) {
-                addLog(`转移出错: ${error}`, true);
-                resetAllStatus();
-                transferStatusEl.textContent = '转移失败';
-                transferStatusEl.className = 'text-2xl font-bold text-red-600';
-                return;
-            }
-
-            // 更新进度
-            const progressPercent = Math.min(progress, 100);
-            progressBar.style.width = `${progressPercent}%`;
-            progressText.textContent = `${progressPercent}%`;
-            
-            // 更新统计数据
-            totalUsersEl.textContent = total || 0;
-            transferredUsersEl.textContent = transferred || 0;
-            skippedUsersEl.textContent = skipped || 0;
-            
-            // 更新转移状态文本
-            if (in_progress) {
-                isTransferring = true;
-                transferStatusEl.textContent = '转移中';
-                transferStatusEl.className = 'text-2xl font-bold text-blue-600';
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                addLog(`转移中 - 已完成${progressPercent}% (${transferred || 0}/${total || 0})`);
-            } else {
-                // 转移完成（且之前在转移中）
-                if (isTransferring) {
-                    transferStatusEl.textContent = '已完成';
-                    transferStatusEl.className = 'text-2xl font-bold text-green-600';
-                    addLog(`转移完成！共处理${total || 0}人，成功转移${transferred || 0}人，跳过${skipped || 0}人`);
-                    resetAllStatus(); // 完成后自动重置（保留日志）
-                }
-            }
-        }
-
-        // 轮询获取状态
-        function startStatusPolling() {
-            // 每秒获取一次状态
-            statusPolling = setInterval(async () => {
-                const serverUrl = serverUrlInput.value.trim();
-                if (!serverUrl) return;
-
-                try {
-                    const response = await fetch(`${serverUrl}/status`);
-                    if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
-                    const statusData = await response.json();
-                    updateStatus(statusData);
-                } catch (err) {
-                    addLog(`获取状态失败: ${err.message}`, true);
-                    clearInterval(statusPolling);
-                    statusPolling = null;
-                }
-            }, 1000);
-        }
-
-        // 开始转移
-        startBtn.addEventListener('click', async () => {
-            const serverUrl = serverUrlInput.value.trim();
-            const sourceGroup = sourceGroupInput.value.trim();
-            const targetGroup = targetGroupInput.value.trim();
-
-            // 表单验证
-            if (!serverUrl) {
-                addLog('请填写服务器地址', true);
-                return;
-            }
-            if (!sourceGroup || !/^-\d+$/.test(sourceGroup)) {
-                addLog('请填写有效的源群组ID（格式：-数字）', true);
-                return;
-            }
-            if (!targetGroup || !/^-\d+$/.test(targetGroup)) {
-                addLog('请填写有效的目标群组ID（格式：-数字）', true);
-                return;
-            }
-            if (sourceGroup === targetGroup) {
-                addLog('源群组和目标群组不能相同', true);
-                return;
-            }
-
-            try {
-                // 修正FormData处理方式
-                const formData = new FormData();
-                formData.append('source', sourceGroup);
-                formData.append('target', targetGroup);
+        // API基础URL
+        const API_BASE_URL = 'https://telegram-laren.bingkuijing.workers.dev';
+        
+        // DOM元素
+        const tabs = document.querySelectorAll('.ios-tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const successToast = document.getElementById('success-toast');
+        const errorToast = document.getElementById('error-toast');
+        const loadingToast = document.getElementById('loading-toast');
+        
+        // 标签页切换
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 移除所有活跃状态
+                tabs.forEach(t => t.classList.remove('ios-tab-active'));
+                tabContents.forEach(c => c.classList.add('hidden'));
                 
-                // 发送转移请求
-                const response = await fetch(`${serverUrl}/transfer`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-                if (response.ok) {
-                    addLog(`转移请求已发送：${result.message}`);
-                    addLog(`源群组：${result.source} | 目标群组：${result.target}`);
-                    // 开始轮询状态
-                    startStatusPolling();
-                } else {
-                    addLog(`请求失败：${result.error}`, true);
+                // 设置当前标签为活跃
+                tab.classList.add('ios-tab-active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-tab`).classList.remove('hidden');
+                
+                // 如果切换到日志标签，刷新日志
+                if (tabId === 'logs') {
+                    fetchLogs();
                 }
-            } catch (err) {
-                addLog(`发送请求失败：${err.message}`, true);
+                
+                // 如果切换到群组标签，刷新群组列表
+                if (tabId === 'groups') {
+                    fetchGroups();
+                }
+            });
+        });
+        
+        // 显示提示框
+        function showToast(element, message = '') {
+            if (message) {
+                element.textContent = message;
+            }
+            element.classList.remove('hidden');
+            setTimeout(() => {
+                element.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // 显示加载提示
+        function showLoading() {
+            loadingToast.classList.remove('hidden');
+        }
+        
+        // 隐藏加载提示
+        function hideLoading() {
+            loadingToast.classList.add('hidden');
+        }
+        
+        // API请求函数
+        async function apiRequest(endpoint, method = 'GET', data = null) {
+            try {
+                showLoading();
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API请求错误:', error);
+                showToast(errorToast, '操作失败，请重试');
+                throw error;
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 加载源群组和目标群组
+        async function loadGroupConfig() {
+            try {
+                const config = await apiRequest('/groups/config');
+                
+                // 显示源群组
+                const sourceGroupsEl = document.getElementById('source-groups');
+                sourceGroupsEl.innerHTML = '';
+                if (config.sources.length === 0) {
+                    sourceGroupsEl.innerHTML = '<div class="bg-ios-gray px-3 py-1 rounded-full text-sm">未设置源群组</div>';
+                } else {
+                    config.sources.forEach(group => {
+                        const groupEl = document.createElement('div');
+                        groupEl.className = 'bg-ios-gray px-3 py-1 rounded-full text-sm';
+                        groupEl.textContent = `${group.group_name} (${group.group_id})`;
+                        sourceGroupsEl.appendChild(groupEl);
+                    });
+                }
+                
+                // 显示目标群组
+                const targetGroupsEl = document.getElementById('target-groups');
+                targetGroupsEl.innerHTML = '';
+                if (config.targets.length === 0) {
+                    targetGroupsEl.innerHTML = '<div class="bg-ios-gray px-3 py-1 rounded-full text-sm">未设置目标群组</div>';
+                } else {
+                    config.targets.forEach(group => {
+                        const groupEl = document.createElement('div');
+                        groupEl.className = 'bg-ios-gray px-3 py-1 rounded-full text-sm';
+                        groupEl.textContent = `${group.group_name} (${group.group_id})`;
+                        targetGroupsEl.appendChild(groupEl);
+                    });
+                }
+                
+                return config;
+            } catch (error) {
+                console.error('加载群组配置失败:', error);
+                document.getElementById('source-groups').innerHTML = '<div class="bg-ios-gray px-3 py-1 rounded-full text-sm text-red-500">加载失败</div>';
+                document.getElementById('target-groups').innerHTML = '<div class="bg-ios-gray px-3 py-1 rounded-full text-sm text-red-500">加载失败</div>';
+            }
+        }
+        
+        // 加载群组列表
+        async function fetchGroups() {
+            try {
+                const groups = await apiRequest('/groups');
+                
+                // 更新群组计数
+                document.getElementById('groups-count').textContent = `${groups.length} 个群组`;
+                document.getElementById('active-groups').textContent = groups.length;
+                
+                // 显示群组列表
+                const groupsListEl = document.getElementById('groups-list');
+                groupsListEl.innerHTML = '';
+                
+                if (groups.length === 0) {
+                    groupsListEl.innerHTML = '<div class="text-center text-ios-dark-gray py-6">暂无群组，请添加</div>';
+                    return;
+                }
+                
+                groups.forEach(group => {
+                    const groupEl = document.createElement('div');
+                    groupEl.className = 'flex justify-between items-center p-3 border-b border-ios-light-gray last:border-0';
+                    
+                    groupEl.innerHTML = `
+                        <div>
+                            <div class="font-medium">${group.group_name}</div>
+                            <div class="text-sm text-ios-dark-gray">ID: ${group.group_id}</div>
+                            <div class="flex gap-2 mt-1">
+                                ${group.is_source ? '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded">源群组</span>' : ''}
+                                ${group.is_target ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded">目标群组</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="edit-group p-2 text-ios-dark-gray hover:text-ios-blue" data-id="${group.id}">
+                                <i class="fa fa-pencil"></i>
+                            </button>
+                            <button class="delete-group p-2 text-ios-dark-gray hover:text-ios-red" data-id="${group.id}">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    
+                    groupsListEl.appendChild(groupEl);
+                });
+                
+                // 添加编辑和删除事件监听
+                document.querySelectorAll('.delete-group').forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        const groupId = e.currentTarget.getAttribute('data-id');
+                        if (confirm('确定要删除这个群组吗？')) {
+                            try {
+                                await apiRequest(`/groups/${groupId}`, 'DELETE');
+                                showToast(successToast, '群组已删除');
+                                fetchGroups();
+                                loadGroupConfig();
+                            } catch (error) {
+                                console.error('删除群组失败:', error);
+                            }
+                        }
+                    });
+                });
+                
+                // 编辑群组事件
+                document.querySelectorAll('.edit-group').forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        const groupId = e.currentTarget.getAttribute('data-id');
+                        const group = groups.find(g => g.id == groupId);
+                        
+                        // 填充表单
+                        document.getElementById('new-group-id').value = group.group_id;
+                        document.getElementById('new-group-name').value = group.group_name;
+                        document.getElementById('is-source').checked = group.is_source;
+                        document.getElementById('is-target').checked = group.is_target;
+                        
+                        // 更改按钮行为为更新
+                        const addButton = document.getElementById('add-group');
+                        addButton.innerHTML = '<i class="fa fa-save mr-1"></i> 更新群组';
+                        addButton.removeAttribute('id');
+                        addButton.id = 'update-group';
+                        
+                        // 添加更新事件
+                        addButton.onclick = async () => {
+                            try {
+                                const updatedGroup = {
+                                    group_id: parseInt(document.getElementById('new-group-id').value),
+                                    group_name: document.getElementById('new-group-name').value,
+                                    is_source: document.getElementById('is-source').checked,
+                                    is_target: document.getElementById('is-target').checked,
+                                    updated_at: new Date().toISOString()
+                                };
+                                
+                                await apiRequest(`/groups/${groupId}`, 'PUT', updatedGroup);
+                                showToast(successToast, '群组已更新');
+                                
+                                // 重置表单和按钮
+                                document.getElementById('new-group-id').value = '';
+                                document.getElementById('new-group-name').value = '';
+                                document.getElementById('is-source').checked = false;
+                                document.getElementById('is-target').checked = false;
+                                
+                                addButton.innerHTML = '<i class="fa fa-plus mr-1"></i> 添加群组';
+                                addButton.removeAttribute('id');
+                                addButton.id = 'add-group';
+                                addButton.onclick = addNewGroup;
+                                
+                                // 刷新列表
+                                fetchGroups();
+                                loadGroupConfig();
+                            } catch (error) {
+                                console.error('更新群组失败:', error);
+                            }
+                        };
+                    });
+                });
+                
+            } catch (error) {
+                console.error('加载群组失败:', error);
+                document.getElementById('groups-list').innerHTML = '<div class="text-center text-ios-dark-gray py-6">加载失败，请重试</div>';
+            }
+        }
+        
+        // 添加新群组
+        async function addNewGroup() {
+            const groupId = document.getElementById('new-group-id').value;
+            const groupName = document.getElementById('new-group-name').value;
+            const isSource = document.getElementById('is-source').checked;
+            const isTarget = document.getElementById('is-target').checked;
+            
+            if (!groupId || !groupName) {
+                showToast(errorToast, '请填写群组ID和名称');
+                return;
+            }
+            
+            try {
+                const newGroup = {
+                    group_id: parseInt(groupId),
+                    group_name: groupName,
+                    is_source: isSource,
+                    is_target: isTarget
+                };
+                
+                await apiRequest('/groups', 'POST', newGroup);
+                showToast(successToast, '群组已添加');
+                
+                // 重置表单
+                document.getElementById('new-group-id').value = '';
+                document.getElementById('new-group-name').value = '';
+                document.getElementById('is-source').checked = false;
+                document.getElementById('is-target').checked = false;
+                
+                // 刷新列表
+                fetchGroups();
+                loadGroupConfig();
+            } catch (error) {
+                console.error('添加群组失败:', error);
+            }
+        }
+        
+        // 加载日志
+        async function fetchLogs(limit = 50) {
+            try {
+                const logs = await apiRequest(`/logs?limit=${limit}`);
+                
+                // 更新总转移用户数
+                const successLogs = logs.filter(log => log.status === 'success');
+                document.getElementById('total-transferred').textContent = successLogs.length;
+                
+                // 显示最近日志（仪表盘）
+                const recentLogsEl = document.getElementById('recent-logs');
+                recentLogsEl.innerHTML = '';
+                
+                const recentLogs = logs.slice(0, 5);
+                if (recentLogs.length === 0) {
+                    recentLogsEl.innerHTML = '<div class="text-center text-ios-dark-gray py-3">暂无操作记录</div>';
+                } else {
+                    recentLogs.forEach(log => {
+                        const logEl = createLogElement(log);
+                        recentLogsEl.appendChild(logEl);
+                    });
+                }
+                
+                // 显示完整日志（日志标签页）
+                const logsListEl = document.getElementById('logs-list');
+                logsListEl.innerHTML = '';
+                
+                if (logs.length === 0) {
+                    logsListEl.innerHTML = '<div class="text-center text-ios-dark-gray py-6">暂无日志记录</div>';
+                } else {
+                    logs.forEach(log => {
+                        const logEl = createLogElement(log);
+                        logsListEl.appendChild(logEl);
+                    });
+                }
+                
+                return logs;
+            } catch (error) {
+                console.error('加载日志失败:', error);
+                document.getElementById('recent-logs').innerHTML = '<div class="text-center text-ios-dark-gray py-3">加载失败</div>';
+                document.getElementById('logs-list').innerHTML = '<div class="text-center text-ios-dark-gray py-6">加载失败，请重试</div>';
+            }
+        }
+        
+        // 创建日志元素
+        function createLogElement(log) {
+            const logEl = document.createElement('div');
+            logEl.className = `p-3 rounded-lg ${log.status === 'success' ? 'bg-green-50' : 'bg-red-50'}`;
+            
+            const date = new Date(log.created_at);
+            const formattedDate = date.toLocaleString();
+            
+            logEl.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div class="font-medium">${log.user_name}</div>
+                    <span class="text-xs ${log.status === 'success' ? 'text-ios-green' : 'text-ios-red'}">
+                        ${log.status === 'success' ? '成功' : '失败'}
+                    </span>
+                </div>
+                <div class="text-sm text-gray-600 mt-1">
+                    从 ${log.source_group_name} 转移到 ${log.target_group_name}
+                </div>
+                <div class="text-xs text-ios-dark-gray mt-1">${formattedDate}</div>
+                ${log.reason ? `<div class="text-xs text-ios-red mt-1">原因: ${log.reason}</div>` : ''}
+            `;
+            
+            return logEl;
+        }
+        
+        // 开始转移用户
+        document.getElementById('start-transfer').addEventListener('click', async () => {
+            try {
+                showLoading();
+                // 调用API通知后端开始转移用户
+                await apiRequest('/transfer/start', 'POST');
+                showToast(successToast, '开始转移用户...');
+                
+                // 定期刷新日志，查看进度
+                const interval = setInterval(() => {
+                    fetchLogs().then(logs => {
+                        // 如果有新的日志，可能转移已完成
+                        if (logs && logs.length > 0) {
+                            clearInterval(interval);
+                        }
+                    });
+                }, 5000);
+                
+            } catch (error) {
+                console.error('转移用户失败:', error);
+                showToast(errorToast, '转移用户失败');
+            } finally {
+                hideLoading();
             }
         });
-
-        // 停止转移（当前后端未实现停止接口，可后续扩展）
-        stopBtn.addEventListener('click', () => {
-            addLog('停止功能待后端扩展（当前仅重置状态）', true);
-            resetAllStatus();
-            // 后续可添加：调用后端 /stop 接口实现真正停止
+        
+        // 刷新日志
+        document.getElementById('refresh-logs').addEventListener('click', () => {
+            fetchLogs();
         });
-
-        // 重置按钮事件
-        resetBtn.addEventListener('click', resetAllStatus);
-
+        
+        // 清空日志
+        document.getElementById('clear-logs').addEventListener('click', async () => {
+            if (confirm('确定要清空所有日志吗？')) {
+                try {
+                    showLoading();
+                    await apiRequest('/logs', 'DELETE');
+                    document.getElementById('logs-list').innerHTML = '<div class="text-center text-ios-dark-gray py-6">日志已清空</div>';
+                    document.getElementById('recent-logs').innerHTML = '<div class="text-center text-ios-dark-gray py-3">暂无操作记录</div>';
+                    document.getElementById('total-transferred').textContent = '0';
+                    showToast(successToast, '日志已清空');
+                } catch (error) {
+                    console.error('清空日志失败:', error);
+                    showToast(errorToast, '清空日志失败');
+                } finally {
+                    hideLoading();
+                }
+            }
+        });
+        
+        // 搜索日志
+        document.getElementById('log-search').addEventListener('input', async (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const logs = await apiRequest('/logs?limit=100');
+            
+            const logsListEl = document.getElementById('logs-list');
+            logsListEl.innerHTML = '';
+            
+            if (!logs) {
+                logsListEl.innerHTML = '<div class="text-center text-ios-dark-gray py-6">加载失败，请重试</div>';
+                return;
+            }
+            
+            const filteredLogs = logs.filter(log => 
+                log.user_name.toLowerCase().includes(searchTerm) ||
+                log.source_group_name.toLowerCase().includes(searchTerm) ||
+                log.target_group_name.toLowerCase().includes(searchTerm)
+            );
+            
+            if (filteredLogs.length === 0) {
+                logsListEl.innerHTML = '<div class="text-center text-ios-dark-gray py-6">没有找到匹配的日志</div>';
+            } else {
+                filteredLogs.forEach(log => {
+                    const logEl = createLogElement(log);
+                    logsListEl.appendChild(logEl);
+                });
+            }
+        });
+        
+        // 添加新群组事件
+        document.getElementById('add-group').addEventListener('click', addNewGroup);
+        
+        // 初始化页面
+        async function init() {
+            await loadGroupConfig();
+            await fetchGroups();
+            await fetchLogs();
+            
+            // 每30秒自动刷新一次数据
+            setInterval(async () => {
+                await loadGroupConfig();
+                await fetchLogs();
+            }, 30000);
+        }
+        
         // 页面加载完成后初始化
-        window.addEventListener('load', () => {
-            addLog('页面加载完成，等待配置并开始转移');
-        });
+        window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
+    
