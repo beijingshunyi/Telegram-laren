@@ -3,288 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram 拉人控制台</title>
-    <style>
-        /* iOS风格样式 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+    <title>【万花楼】Telegram群组用户转移工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#64748b',
+                        success: '#10b981',
+                        danger: '#ef4444',
+                        dark: '#1e293b',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
         }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f2f2f7;
-            color: #1c1c1e;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #007AFF, #0051D5);
-            color: white;
-            padding: 25px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: 600;
-        }
-        
-        .content {
-            padding: 25px;
-        }
-        
-        .card {
-            background: #f9f9f9;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        
-        .card-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            color: #007AFF;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #3a3a3c;
-        }
-        
-        input, textarea {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #d1d1d6;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: #007AFF;
-        }
-        
-        .button {
-            background: #007AFF;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s;
-            margin-right: 10px;
-        }
-        
-        .button:hover {
-            background: #0051D5;
-        }
-        
-        .button.stop {
-            background: #FF3B30;
-        }
-        
-        .button.stop:hover {
-            background: #D70015;
-        }
-        
-        .status {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 15px;
-        }
-        
-        .status.running {
-            background: #34C759;
-            color: white;
-        }
-        
-        .status.stopped {
-            background: #FF3B30;
-            color: white;
-        }
-        
-        .logs {
-            height: 300px;
-            overflow-y: auto;
-            background: #f9f9f9;
-            border-radius: 10px;
-            padding: 15px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            border: 1px solid #e5e5ea;
-        }
-        
-        .log-entry {
-            margin-bottom: 8px;
-            padding: 8px;
-            border-radius: 8px;
-            background: white;
-        }
-        
-        .log-entry.success {
-            border-left: 4px solid #34C759;
-        }
-        
-        .log-entry.failed {
-            border-left: 4px solid #FF3B30;
-        }
-        
-        .log-time {
-            color: #8e8e93;
-            font-size: 12px;
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .shadow-soft {
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            }
+            .transition-all-300 {
+                transition: all 300ms ease-in-out;
+            }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            Telegram 拉人控制台
-        </div>
-        <div class="content">
-            <!-- 状态控制 -->
-            <div class="card">
-                <div class="card-title">脚本控制</div>
-                <div id="status" class="status stopped">已停止</div>
-                <button id="startBtn" class="button">启动脚本</button>
-                <button id="stopBtn" class="button stop">停止脚本</button>
-            </div>
-            
-            <!-- 配置管理 -->
-            <div class="card">
-                <div class="card-title">群组配置</div>
-                <div class="form-group">
-                    <label for="sourceGroups">源群组ID (多个用逗号分隔)</label>
-                    <input type="text" id="sourceGroups" placeholder="例如: -1001234567890,-1000987654321">
+<body class="bg-gray-50 min-h-screen font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="text-center mb-10">
+            <h1 class="text-[clamp(1.8rem,5vw,2.5rem)] font-bold text-dark mb-2">
+                <i class="fa fa-telegram text-primary mr-3"></i>Telegram群组用户转移工具
+            </h1>
+            <p class="text-secondary text-lg">轻松将成员从一个群组转移到另一个群组</p>
+        </header>
+
+        <main class="bg-white rounded-xl shadow-soft p-6 md:p-8 mb-8">
+            <!-- 群组ID输入区域 -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-dark mb-4 flex items-center">
+                    <i class="fa fa-cogs text-primary mr-2"></i>群组设置
+                </h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="sourceGroup" class="block text-sm font-medium text-gray-700 mb-1">源群组ID</label>
+                        <input 
+                            type="text" 
+                            id="sourceGroup" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all-300"
+                            placeholder="例如: -2651659549"
+                            value="-2651659549"
+                        >
+                    </div>
+                    <div>
+                        <label for="targetGroup" class="block text-sm font-medium text-gray-700 mb-1">目标群组ID</label>
+                        <input 
+                            type="text" 
+                            id="targetGroup" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all-300"
+                            placeholder="例如: -1002735235059"
+                            value="-1002735235059"
+                        >
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="targetGroup">目标群组ID</label>
-                    <input type="text" id="targetGroup" value="-1002735235059" readonly>
+            </div>
+
+            <!-- 控制按钮区域 -->
+            <div class="mb-8 text-center">
+                <button 
+                    id="startTransfer" 
+                    class="bg-primary hover:bg-primary/90 text-white font-medium px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mx-auto"
+                >
+                    <i class="fa fa-play mr-2"></i>开始转移用户
+                </button>
+                <button 
+                    id="stopTransfer" 
+                    class="bg-danger hover:bg-danger/90 text-white font-medium px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mx-auto mt-4 hidden"
+                >
+                    <i class="fa fa-stop mr-2"></i>停止转移
+                </button>
+            </div>
+
+            <!-- 状态显示区域 -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-dark mb-4 flex items-center">
+                    <i class="fa fa-bar-chart text-primary mr-2"></i>转移状态
+                </h2>
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div class="mb-4">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>转移进度</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div id="progressBar" class="bg-primary h-3 rounded-full transition-all-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div class="bg-blue-50 p-3 rounded-lg">
+                            <p class="text-sm text-gray-600">总用户数</p>
+                            <p id="totalUsers" class="text-xl font-semibold text-primary">0</p>
+                        </div>
+                        <div class="bg-green-50 p-3 rounded-lg">
+                            <p class="text-sm text-gray-600">已转移</p>
+                            <p id="transferredUsers" class="text-xl font-semibold text-success">0</p>
+                        </div>
+                        <div class="bg-yellow-50 p-3 rounded-lg">
+                            <p class="text-sm text-gray-600">已跳过</p>
+                            <p id="skippedUsers" class="text-xl font-semibold text-yellow-500">0</p>
+                        </div>
+                        <div class="bg-purple-50 p-3 rounded-lg">
+                            <p class="text-sm text-gray-600">状态</p>
+                            <p id="transferStatus" class="text-xl font-semibold text-secondary">未开始</p>
+                        </div>
+                    </div>
                 </div>
-                <button id="saveConfig" class="button">保存配置</button>
             </div>
-            
-            <!-- 日志查看 -->
-            <div class="card">
-                <div class="card-title">操作日志</div>
-                <div id="logs" class="logs"></div>
-                <button id="refreshLogs" class="button">刷新日志</button>
+
+            <!-- 日志显示区域 -->
+            <div>
+                <h2 class="text-xl font-semibold text-dark mb-4 flex items-center">
+                    <i class="fa fa-history text-primary mr-2"></i>操作日志
+                </h2>
+                <div id="logContainer" class="bg-gray-900 text-gray-200 rounded-lg p-4 h-60 overflow-y-auto text-sm font-mono">
+                    <p class="text-gray-400">等待操作开始...</p>
+                </div>
             </div>
-        </div>
+        </main>
+
+        <footer class="text-center text-gray-500 text-sm">
+            <p>© 2025 【万花楼】Telegram群组用户转移工具 | 注意：请遵守Telegram使用条款</p>
+        </footer>
     </div>
 
     <script>
-        // API配置
-        const API_BASE = 'https://telegram-laren.bingkuijing.workers.dev';
-        
+        // 后端API地址（替换为您的EC2公网IP）
+        const API_BASE_URL = 'http://3.26.45.31:8000';
+        let statusPollInterval = null;
+
         // DOM元素
-        const statusEl = document.getElementById('status');
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const sourceGroupsInput = document.getElementById('sourceGroups');
+        const startBtn = document.getElementById('startTransfer');
+        const stopBtn = document.getElementById('stopTransfer');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const totalUsers = document.getElementById('totalUsers');
+        const transferredUsers = document.getElementById('transferredUsers');
+        const skippedUsers = document.getElementById('skippedUsers');
+        const transferStatus = document.getElementById('transferStatus');
+        const logContainer = document.getElementById('logContainer');
+        const sourceGroupInput = document.getElementById('sourceGroup');
         const targetGroupInput = document.getElementById('targetGroup');
-        const saveConfigBtn = document.getElementById('saveConfig');
-        const logsContainer = document.getElementById('logs');
-        const refreshLogsBtn = document.getElementById('refreshLogs');
-        
-        // 获取配置
-        async function fetchConfig() {
-            const res = await fetch(`${API_BASE}/config`);
-            return await res.json();
+
+        // 添加日志
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('p');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
         }
-        
-        // 更新配置
-        async function updateConfig(config) {
-            await fetch(`${API_BASE}/config`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config)
-            });
-        }
-        
-        // 获取日志
-        async function fetchLogs() {
-            const res = await fetch(`${API_BASE}/logs`);
-            return await res.json();
-        }
-        
+
         // 更新状态显示
-        function updateStatus(isRunning) {
-            if (isRunning) {
-                statusEl.textContent = '运行中';
-                statusEl.className = 'status running';
+        function updateStatus(status) {
+            progressBar.style.width = `${status.progress}%`;
+            progressPercent.textContent = `${status.progress}%`;
+            totalUsers.textContent = status.total;
+            transferredUsers.textContent = status.transferred;
+            skippedUsers.textContent = status.skipped;
+
+            if (status.in_progress) {
+                transferStatus.textContent = '转移中';
+                transferStatus.className = 'text-xl font-semibold text-primary';
+                startBtn.disabled = true;
+                stopBtn.classList.remove('hidden');
             } else {
-                statusEl.textContent = '已停止';
-                statusEl.className = 'status stopped';
+                if (status.progress === 100) {
+                    transferStatus.textContent = '已完成';
+                    transferStatus.className = 'text-xl font-semibold text-success';
+                } else {
+                    transferStatus.textContent = '未开始';
+                    transferStatus.className = 'text-xl font-semibold text-secondary';
+                }
+                startBtn.disabled = false;
+                stopBtn.classList.add('hidden');
             }
         }
-        
-        // 加载配置
-        async function loadConfig() {
-            const config = await fetchConfig();
-            sourceGroupsInput.value = config.source_group_ids?.join(',') || '';
-            targetGroupInput.value = config.target_group_id;
-            updateStatus(config.is_running);
+
+        // 获取当前状态
+        async function getStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/status`);
+                const status = await response.json();
+                updateStatus(status);
+                return status;
+            } catch (error) {
+                addLog(`错误：无法获取状态 - ${error.message}`);
+                console.error('Status error:', error);
+            }
         }
-        
-        // 加载日志
-        async function loadLogs() {
-            const logs = await fetchLogs();
-            logsContainer.innerHTML = logs.map(log => `
-                <div class="log-entry ${log.status}">
-                    <div class="log-time">${new Date(log.created_at).toLocaleString()}</div>
-                    <div>${log.message}</div>
-                </div>
-            `).join('');
-            logsContainer.scrollTop = logsContainer.scrollHeight;
+
+        // 开始转移
+        async function startTransfer() {
+            const sourceGroup = sourceGroupInput.value.trim();
+            const targetGroup = targetGroupInput.value.trim();
+
+            if (!sourceGroup || !targetGroup) {
+                addLog('错误：请输入源群组和目标群组ID');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/transfer`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        source_group_id: sourceGroup,
+                        target_group_id: targetGroup
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    addLog('开始转移用户...');
+                    startStatusPolling();
+                } else {
+                    addLog(`错误：${result.error || '无法开始转移'}`);
+                }
+            } catch (error) {
+                addLog(`错误：开始转移失败 - ${error.message}`);
+                console.error('Start transfer error:', error);
+            }
         }
-        
+
+        // 开始轮询状态
+        function startStatusPolling() {
+            if (statusPollInterval) clearInterval(statusPollInterval);
+            getStatus(); // 立即获取一次
+            statusPollInterval = setInterval(async () => {
+                const status = await getStatus();
+                if (status && !status.in_progress && status.progress === 100) {
+                    addLog('转移已完成！');
+                    clearInterval(statusPollInterval);
+                    statusPollInterval = null;
+                }
+            }, 3000); // 每3秒查询一次
+        }
+
         // 事件监听
-        startBtn.addEventListener('click', async () => {
-            await updateConfig({ is_running: true });
-            updateStatus(true);
+        startBtn.addEventListener('click', startTransfer);
+        stopBtn.addEventListener('click', () => {
+            // 实际项目中可能需要实现停止功能
+            addLog('提示：当前版本不支持中途停止，请等待完成');
         });
-        
-        stopBtn.addEventListener('click', async () => {
-            await updateConfig({ is_running: false });
-            updateStatus(false);
+
+        // 页面加载时获取一次状态
+        window.addEventListener('load', () => {
+            addLog('页面已加载，准备就绪');
+            getStatus();
         });
-        
-        saveConfigBtn.addEventListener('click', async () => {
-            const sourceGroups = sourceGroupsInput.value.split(',').map(id => id.trim()).filter(id => id);
-            await updateConfig({ 
-                source_group_ids: sourceGroups,
-                target_group_id: parseInt(targetGroupInput.value)
-            });
-            alert('配置已保存！');
-        });
-        
-        refreshLogsBtn.addEventListener('click', loadLogs);
-        
-        // 初始化
-        loadConfig();
-        loadLogs();
     </script>
 </body>
 </html>
+    
